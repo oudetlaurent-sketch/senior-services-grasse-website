@@ -1,0 +1,221 @@
+/*
+ * Base accessible styling — Senior Services Website
+ * -----------------------------------------------------------------------------
+ * Applies the design tokens from tokens.css to produce the senior-friendly
+ * readability baseline every page inherits:
+ *   - rem-based sizing throughout, scaling under 200% zoom (Requirements 5.1, 5.3)
+ *   - body text at >= 18px (Requirement 5.1)
+ *   - token-driven, AA-contrast color pairs (Requirement 5.2)
+ *   - 44x44px minimum interactive targets with >= 8px spacing (Requirement 5.4)
+ *   - a visible focus indicator clearly distinct from the unfocused state
+ *     (Requirement 6.5)
+ *
+ * Import order: tokens.css must be loaded before this file so the custom
+ * properties resolve.
+ */
+@import "./tokens.css";
+
+/* ---------- Reset / box model ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* Keep the root at the user/browser default (typically 16px) rather than
+     pinning a px size, so user font-size preferences and zoom are respected. */
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body); /* >= 18px (Requirement 5.1) */
+  line-height: var(--line-height-body);
+  color: var(--color-text);
+  /* Page background mat is the City of Grasse heraldic red; page content sits on light
+     surfaces (scrim, cards, footer) over it so text contrast is preserved. */
+  background-color: var(--color-page);
+  /* Avoid horizontal scrolling at high zoom (supports Requirement 5.3). */
+  overflow-wrap: break-word;
+}
+
+/* ---------- Typography ---------- */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  line-height: var(--line-height-heading);
+  color: var(--color-text);
+  margin: 0 0 var(--space-md);
+}
+
+h1 {
+  font-size: var(--font-size-h1);
+}
+h2 {
+  font-size: var(--font-size-h2);
+}
+h3 {
+  font-size: var(--font-size-h3);
+}
+
+p,
+ul,
+ol {
+  margin: 0 0 var(--space-md);
+}
+
+/* ---------- Links ---------- */
+a {
+  color: var(--color-link);
+  text-decoration: underline; /* underline, not color alone, conveys link-ness */
+  text-underline-offset: 0.15em;
+}
+
+a:hover,
+a:active {
+  color: var(--color-link-hover);
+}
+
+/* ---------- Visible, distinct focus indicator (Requirement 6.5) ----------
+   A thick offset outline in the dedicated focus color. This differs clearly
+   from the unfocused state (no outline) and from the link color, so focus is
+   unmistakable for keyboard users. :focus-visible is used so the ring shows for
+   keyboard navigation; a :focus fallback covers browsers without the pseudo-class. */
+:focus {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* ---------- Interactive controls: target size + spacing (Requirement 5.4) ----------
+   Links, buttons, selects, and other controls get a 44x44px minimum hit area
+   and at least 8px of spacing from adjacent controls. Block/standalone links
+   opt into the full target via the .control helper; inline links inside running
+   prose are exempt from the 44px minimum per WCAG target-size exceptions. */
+button,
+[type="button"],
+[type="submit"],
+[type="reset"],
+.control,
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--target-min);
+  min-height: var(--target-min);
+  padding: var(--space-sm) var(--space-md);
+  font: inherit;
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+/* Primary button / call-to-action uses the AA-contrast primary pair. */
+button,
+[type="button"],
+[type="submit"],
+[type="reset"],
+.button {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  border-color: var(--color-primary);
+}
+
+button:hover,
+[type="submit"]:hover,
+.button:hover {
+  background-color: var(--color-link-hover);
+  border-color: var(--color-link-hover);
+}
+
+/* Form controls also honor the minimum target height and token colors. */
+input,
+select,
+textarea {
+  font: inherit;
+  font-size: var(--font-size-body);
+  min-height: var(--target-min);
+  padding: var(--space-xs) var(--space-sm);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+textarea {
+  min-height: calc(var(--target-min) * 2);
+  line-height: var(--line-height-body);
+}
+
+/* Spacing between adjacent interactive controls (>= 8px, Requirement 5.4).
+   Applied to control groups so neighboring targets never touch. */
+.control-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--target-gap);
+}
+
+/* Vertically stacked controls (e.g., nav items, form rows) keep the same gap. */
+.control-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--target-gap);
+}
+
+/* ---------- Surfaces ---------- */
+.surface {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+/* ---------- Error styling (uses AA-contrast error pair) ---------- */
+.error-text,
+[role="alert"] .error-text {
+  color: var(--color-error);
+}
+
+/* ---------- Skip link (keyboard users) ---------- */
+.skip-link {
+  position: absolute;
+  left: var(--space-sm);
+  top: -3rem;
+  z-index: 100;
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius);
+  text-decoration: none;
+  transition: top 0.1s ease-in;
+}
+
+.skip-link:focus {
+  top: var(--space-sm);
+}
+
+/* ---------- Honor reduced-motion preferences ---------- */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

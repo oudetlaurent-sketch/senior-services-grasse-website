@@ -1,0 +1,142 @@
+---
+/**
+ * ServicePageContent — the body of one Service_Page, rendered inside {@link SiteLayout}
+ * (design §3, "Service Pages").
+ *
+ * Factored out of the per-language page files (src/pages/services/[service].astro and
+ * src/pages/en/services/[service].astro) so the SAME markup renders in both languages.
+ * The service's localized title/description/includes are read from the localized content
+ * model for the active `language` (Requirement 7.6); the content-model building and the
+ * content-unavailable rules stay in the pure {@link buildServicePageModel} helper so the
+ * page and the property-based tests share one source of truth.
+ *
+ * Renders (Requirement 2.2) the service description and includes list, and a visible
+ * link to the Service_Request_Form carrying the service as a preselection, resolved to
+ * the active language's form route so the English page links to the English form
+ * (Requirements 2.3, 2.4, 7.6). On missing/empty content it shows an in-place
+ * content-unavailable indication and keeps the visitor on the page (Requirements 2.5, 2.6).
+ */
+import { buildServicePageModel } from "../domain/service-page.ts";
+import { buildServiceFormLinkFor } from "../domain/service-link.ts";
+import { getMessages } from "../content/i18n.ts";
+import type { Language, Service, ServiceKey } from "../domain/types.ts";
+
+interface Props {
+  /** The active Supported_Language; selects the service copy and the form route. */
+  language: Language;
+  /** Which of the three services this page renders. */
+  serviceKey: ServiceKey;
+}
+
+const { language, serviceKey } = Astro.props;
+
+// Build the Service shape for the active language from the localized content model, then
+// hand it to the pure page-model builder so normalization and the content-unavailable
+// guard are identical to the single-language behavior (Requirements 2.2, 2.5, 2.6).
+const content = getMessages(language).services[serviceKey];
+const service: Service = {
+  key: serviceKey,
+  title: content.title,
+  description: content.description,
+  includes: content.includes,
+};
+
+const { title: name, description, includes, contentUnavailable } =
+  buildServicePageModel(service);
+
+// Per-language preselecting link to the Service_Request_Form (Requirements 2.3, 2.4, 7.6).
+const formLink = buildServiceFormLinkFor(language, serviceKey);
+
+// Localized chrome around the content model.
+const copy =
+  language === "fr"
+    ? {
+        includesHeading: "Ce que comprend ce service",
+        requestPrefix: "Demander : ",
+        unavailableTitle: "Le contenu de ce service est momentanément indisponible.",
+        unavailableBody:
+          "Nous n'avons pas pu charger les détails de ce service pour le moment. " +
+          "Merci de réessayer un peu plus tard, ou d'utiliser le menu ci-dessus pour " +
+          "découvrir d'autres services ou nous contacter grâce au numéro de téléphone " +
+          "et à l'adresse e-mail en bas de cette page.",
+      }
+    : {
+        includesHeading: "What this service includes",
+        requestPrefix: "Request: ",
+        unavailableTitle: "This service's content is temporarily unavailable.",
+        unavailableBody:
+          "We couldn't load the details of this service right now. Please try again a " +
+          "little later, or use the menu above to explore other services or reach us " +
+          "with the phone number and email address at the bottom of this page.",
+      };
+---
+
+{/*
+  No full-page Grasse background behind the Service_Page content (Requirement 9.1,
+  revised). The `.page-scrim` wrapper remains as a plain surface panel; it no longer sits
+  over a photo.
+*/}
+<div class="page-scrim">
+  {
+    contentUnavailable ? (
+      <div class="service-error" role="alert">
+        <p class="error-text">
+          <strong>{copy.unavailableTitle}</strong>
+        </p>
+        <p>{copy.unavailableBody}</p>
+      </div>
+    ) : (
+      <article class="service">
+        <p class="service__description">{description}</p>
+
+        <section class="service__includes" aria-labelledby="includes-heading">
+          <h2 id="includes-heading">{copy.includesHeading}</h2>
+          <ul>
+            {includes.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </section>
+
+        <p class="service__cta">
+          <a class="button" href={formLink}>
+            {copy.requestPrefix}
+            {name}
+          </a>
+        </p>
+      </article>
+    )
+  }
+</div>
+
+<style>
+  .page-scrim {
+    background-color: var(--scrim-surface, #faf6ef);
+    opacity: var(--scrim-opacity, 1);
+    padding: var(--space-md, 1rem);
+    border-radius: var(--radius, 0.375rem);
+  }
+
+  .service__description {
+    max-width: 60ch;
+  }
+
+  .service__includes ul {
+    max-width: 60ch;
+  }
+
+  .service__cta {
+    margin-top: var(--space-lg, 1.5rem);
+  }
+
+  .service-error {
+    max-width: 60ch;
+    padding: var(--space-md, 1rem);
+    border: 2px solid var(--color-error, #b00020);
+    border-radius: var(--radius, 0.375rem);
+  }
+
+  .service-error .error-text {
+    margin-top: 0;
+  }
+</style>

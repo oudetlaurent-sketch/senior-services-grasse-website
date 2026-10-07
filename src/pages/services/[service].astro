@@ -1,0 +1,46 @@
+---
+/**
+ * Service_Page — French (default) routes at `/services/<key>` (design §3).
+ *
+ * A thin per-language route tree: `getStaticPaths` emits one static route per service
+ * key (Requirement 2.1), and each renders the shared {@link SiteLayout} with
+ * `language="fr"` (so the document declares `lang="fr"`, Requirement 7.7) around the
+ * shared {@link ServicePageContent} body. The content body reads the service's French
+ * title/description/includes from the localized content model and links to the French
+ * form (Requirements 2.2–2.4, 7.6). The English mirror lives at
+ * src/pages/en/services/[service].astro with `language="en"`.
+ */
+import type { GetStaticPaths } from "astro";
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import ServicePageContent from "../../components/ServicePageContent.astro";
+import { SERVICE_KEYS } from "../../content/services.ts";
+import { getMessages } from "../../content/i18n.ts";
+import type { ServiceKey } from "../../domain/types.ts";
+
+/**
+ * Emit one static French route per service, keyed by {@link ServiceKey}, so the three
+ * Service_Pages are pre-rendered at build time (Requirements 2.1, 2.2). The
+ * {@link ServiceKey} is passed through as a prop; the ServiceKey ids stay stable in the
+ * URL across both languages.
+ */
+export const getStaticPaths = (() => {
+  return SERVICE_KEYS.map((key) => ({
+    params: { service: key },
+    props: { serviceKey: key },
+  }));
+}) satisfies GetStaticPaths;
+
+interface Props {
+  serviceKey: ServiceKey;
+}
+
+const { serviceKey } = Astro.props;
+const language = "fr" as const;
+
+// Page title (and current-page nav indicator) is the service's French title.
+const pageTitle = getMessages(language).services[serviceKey].title;
+---
+
+<SiteLayout title={pageTitle} currentPage={serviceKey} language={language}>
+  <ServicePageContent language={language} serviceKey={serviceKey} />
+</SiteLayout>

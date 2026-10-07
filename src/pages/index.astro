@@ -1,0 +1,20 @@
+---
+/**
+ * Home_Page — French (default) route at `/` (design §2, "Home Page").
+ *
+ * A thin per-language route: it renders the shared {@link SiteLayout} with
+ * `language="fr"` (so the document declares `lang="fr"`, Requirement 7.7) and the shared
+ * {@link HomeContent} body, which reads every visitor-facing string from the localized
+ * content model for French (Requirement 7.6). The English equivalent lives at
+ * src/pages/en/index.astro and renders the same component with `language="en"`.
+ */
+import SiteLayout from "../layouts/SiteLayout.astro";
+import HomeContent from "../components/HomeContent.astro";
+import { BUSINESS_INFO } from "../content/business.ts";
+
+const language = "fr" as const;
+---
+
+<SiteLayout title={BUSINESS_INFO.name} currentPage="home" language={language}>
+  <HomeContent language={language} />
+</SiteLayout>

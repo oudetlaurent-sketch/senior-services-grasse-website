@@ -1,0 +1,30 @@
+---
+/**
+ * Scheduling_Page — English route at `/en/schedule` (design §11, task 21.1).
+ *
+ * The English mirror of src/pages/rendez-vous.astro. Renders the shared
+ * {@link SiteLayout} with `language="en"` (document `lang="en"`, Requirement 7.7), the
+ * English title (`messages.scheduling.heading`, also the nav label),
+ * `currentPage="scheduling"`, and the bilingual {@link SchedulingContent} body for
+ * English.
+ *
+ * The body embeds the external Scheduling_Service behind the documented
+ * `PUBLIC_SCHEDULING_URL` config value and resolves the three states via
+ * `resolveSchedulingState`; with the booking URL UNSET (the current default) it shows the
+ * coming-soon placeholder (Requirement 12.5). See SchedulingContent.astro.
+ *
+ * This replaces the task-18.3 placeholder route body with the real Scheduling_Page.
+ */
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import SchedulingContent from "../../components/SchedulingContent.astro";
+import { getMessages } from "../../content/i18n.ts";
+
+const language = "en" as const;
+const messages = getMessages(language);
+// The single top-level <h1> is the scheduling heading (Requirement 12.6).
+const pageTitle = messages.scheduling.heading;
+---
+
+<SiteLayout title={pageTitle} currentPage="scheduling" language={language}>
+  <SchedulingContent language={language} />
+</SiteLayout>

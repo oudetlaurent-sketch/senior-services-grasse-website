@@ -1,0 +1,22 @@
+---
+/**
+ * About_Page — English route at `/en/about` (design §10, "About Page").
+ *
+ * The English mirror of src/pages/about.astro: renders the shared {@link SiteLayout} with
+ * `language="en"` (document `lang="en"`, Requirement 7.7) and the English title "About"
+ * (the single top-level `<h1>`, Requirement 11.5), with the {@link AboutContent} body
+ * supplying Laurent Oudet's name and provisional professional biography for English
+ * (Requirements 11.2–11.4). Reachable from the Navigation_Menu on every page (wired in
+ * task 18.2).
+ */
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import AboutContent from "../../components/AboutContent.astro";
+import { getMessages } from "../../content/i18n.ts";
+
+const language = "en" as const;
+const pageTitle = getMessages(language).nav.about;
+---
+
+<SiteLayout title={pageTitle} currentPage="about" language={language}>
+  <AboutContent language={language} />
+</SiteLayout>

@@ -1,0 +1,805 @@
+---
+/**
+ * HomeContent — the body of the Home_Page, rendered inside {@link SiteLayout}
+ * (design §2, "Home Page").
+ *
+ * Factored out of the per-language page files (src/pages/index.astro and
+ * src/pages/en/index.astro) so the SAME markup renders in both languages, reading every
+ * visitor-facing string from the localized content model for the active `language`
+ * (Requirement 7.6). The French and English Home_Pages differ only in their `language`
+ * prop; the structure, error regions, data-* hooks, and progressive-enhancement script
+ * are shared.
+ *
+ * Content presented (Requirements 1.2–1.5):
+ * - the business name and a one-sentence description of the services offered (1.2),
+ * - a link to each of the three Service_Pages, resolved to the active language's routes
+ *   so the English Home links to the English service pages (1.3),
+ * - a link to the Service_Request_Form in the active language (1.4),
+ * - the business phone number and email address (1.5).
+ *
+ * Error handling (Requirements 1.6, 1.7) and the no-JS behavior are unchanged from the
+ * original single-language Home_Page: all links are plain anchors to real routes, and
+ * the inline script only ADDS the load-failure retry and broken-link affordances.
+ */
+import { HOME_PHOTO, SERVICE_PHOTO, grassePhotoSrc } from "../domain/grasse-photos.ts";
+import { pagePath } from "../domain/navigation.ts";
+import {
+  buildServiceFormLinkFor,
+} from "../domain/service-link.ts";
+import { SERVICE_KEYS } from "../content/services.ts";
+import { getMessages } from "../content/i18n.ts";
+import { BUSINESS_INFO, phoneHref } from "../content/business.ts";
+import type { Language } from "../domain/types.ts";
+
+interface Props {
+  /** The active Supported_Language; selects which copy and which routes to render. */
+  language: Language;
+}
+
+const { language } = Astro.props;
+const messages = getMessages(language);
+
+// Business identity and contact details presented as primary Home_Page content
+// (Requirements 1.2, 1.5, 7.4), read once from BUSINESS_INFO (shared with the footer and
+// the form). The one-sentence description and intro come from the localized content
+// model for the active language (Requirement 7.6).
+const BUSINESS_NAME = BUSINESS_INFO.name;
+const BUSINESS_DESCRIPTION = messages.home.description;
+const BUSINESS_INTRO = messages.home.intro;
+const BUSINESS_PHONE = BUSINESS_INFO.phone;
+const BUSINESS_PHONE_HREF = phoneHref(BUSINESS_INFO.phone);
+const BUSINESS_EMAIL = BUSINESS_INFO.email;
+// Service_Area statement in the active language (Requirement 8.1).
+const SERVICE_AREA_STATEMENT = messages.footer.serviceAreaStatement;
+
+// Section headings and contact labels in the active language.
+const HEADINGS = messages.home.headings;
+const FOOTER_LABELS = messages.footer;
+
+// Link to the Service_Request_Form in the active language (Requirement 1.4), and to the
+// Scheduling_Page — both referenced by the How_It_Works and FAQ sections as next
+// actions (Requirements 13.3, 15.3).
+const SERVICE_REQUEST_HREF = pagePath(language, "service-request");
+const SCHEDULING_HREF = pagePath(language, "scheduling");
+
+// One card per service: the service's localized title/description, its per-language
+// page href (Requirement 1.3), a per-language preselecting form link, and the distinct
+// Grasse photograph the image-led Service_Card shows at its top (Requirements 16.2,
+// 16.3). SERVICE_PHOTO[key] gives each service a stable, distinct Grasse photo — the
+// same assets used for the decorative backgrounds — so no new image pipeline is needed.
+const serviceCards = SERVICE_KEYS.map((key) => ({
+  key,
+  title: messages.services[key].title,
+  description: messages.services[key].description,
+  href: pagePath(language, key),
+  formHref: buildServiceFormLinkFor(language, key),
+  photoSrc: grassePhotoSrc(SERVICE_PHOTO[key]),
+}));
+
+// How_It_Works, Reassurance, and FAQ copy for the active language (Requirements 13, 14,
+// 15), read from the localized content model (populated by task 26.1).
+const HOW_IT_WORKS = messages.howItWorks;
+const REASSURANCE = messages.reassurance;
+const FAQ = messages.faq;
+
+// Hero_Banner copy (Requirement 16.1, 16.9) and the Home_Page's distinct Grasse
+// photograph, reused as the hero's decorative background (Requirements 16.3, 16.6). The
+// headline/tagline/CTA carry the meaning; the photo is decorative with an empty text
+// alternative, so it is applied as a CSS background (no announced <img>).
+const HERO = messages.home.hero;
+const HERO_PHOTO_SRC = grassePhotoSrc(HOME_PHOTO);
+
+// FAQ answers that refer to requesting a service or booking a meeting must link to the
+// Service_Request_Form / Scheduling_Page (Requirement 15.3). We detect those answers by
+// the request/booking vocabulary used in both languages' copy, and attach the action
+// links to them without altering the answer prose.
+const FAQ_ACTION_PATTERN =
+  /demande|rendez-vous|formulaire|request|book|meeting|form/i;
+const faqItems = FAQ.items.map((item, index) => ({
+  ...item,
+  id: `home-faq-${index}`,
+  withActions: FAQ_ACTION_PATTERN.test(item.answer),
+}));
+
+// Localized microcopy for the error regions and link text.
+const copy =
+  language === "fr"
+    ? {
+        loadError:
+          "Oups, cette page n'a pas pu se charger. Vérifiez votre connexion, puis réessayez.",
+        retry: "Réessayer",
+        serviceError:
+          "Désolés, cette page n'est pas accessible pour le moment. Vous êtes toujours " +
+          "sur la page d'accueil — essayez un autre lien ou revenez un peu plus tard.",
+        requestCta: "Accéder au formulaire de demande",
+        requestPrefix: "Demander : ",
+        // Hero_Banner secondary call to action (Requirement 16.1): a quieter link to
+        // the Scheduling_Page alongside the primary request-form CTA.
+        heroSecondaryCta: "Prendre rendez-vous en ligne",
+        // How_It_Works next-action links (Requirement 13.3).
+        howItWorksIntro:
+          "En trois étapes simples, et à votre rythme :",
+        howItWorksFormLink: "Remplir le formulaire de demande",
+        howItWorksSchedulingLink: "Prendre rendez-vous en ligne",
+        howItWorksOutroPrefix: "Prêt à vous lancer ? ",
+        howItWorksOr: " ou ",
+        howItWorksOutroSuffix: ".",
+        // FAQ in-answer action links (Requirement 15.3).
+        faqFormLink: "Remplir le formulaire de demande",
+        faqSchedulingLink: "Prendre rendez-vous en ligne",
+        faqActionsPrefix: "Pour commencer : ",
+      }
+    : {
+        loadError:
+          "Oops, this page couldn't load. Please check your connection, then try again.",
+        retry: "Try again",
+        serviceError:
+          "Sorry, this page isn't available right now. You're still on the home page — " +
+          "try another link or come back a little later.",
+        requestCta: "Go to the request form",
+        requestPrefix: "Request: ",
+        // Hero_Banner secondary call to action (Requirement 16.1): a quieter link to
+        // the Scheduling_Page alongside the primary request-form CTA.
+        heroSecondaryCta: "Book a meeting online",
+        // How_It_Works next-action links (Requirement 13.3).
+        howItWorksIntro: "In three simple steps, at your own pace:",
+        howItWorksFormLink: "Fill in the request form",
+        howItWorksSchedulingLink: "Book a meeting online",
+        howItWorksOutroPrefix: "Ready to get started? ",
+        howItWorksOr: " or ",
+        howItWorksOutroSuffix: ".",
+        // FAQ in-answer action links (Requirement 15.3).
+        faqFormLink: "Fill in the request form",
+        faqSchedulingLink: "Book a meeting online",
+        faqActionsPrefix: "To get started: ",
+      };
+---
+
+{/*
+  No full-page Grasse background behind the page content (Requirement 9.1, revised). The
+  Grasse photographs appear only as the Hero_Banner image (below) and the Service_Card
+  images (Requirement 16). The `.page-scrim` wrapper remains as a plain surface panel for
+  the page content; it no longer sits over a photo.
+*/}
+<div class="page-scrim">
+  {/* Load-failure region (Requirement 1.6). Hidden until the script reveals it. */}
+  <div id="home-load-error" class="load-error" role="alert" hidden>
+    <p class="load-error__message">{copy.loadError}</p>
+    <button id="home-load-retry" type="button" class="load-error__retry">
+      {copy.retry}
+    </button>
+  </div>
+
+  {/* Marker the load-failure script watches for to confirm the page content rendered. */}
+  <div id="home-content" data-home-ready="true">
+    {/*
+      Hero_Banner (Requirement 16.1, 16.3, 16.5, 16.6, 16.9). Modeled on the
+      needhelp.com landing template: a large Grasse photograph with an overlaid headline,
+      a short supporting sentence, and a primary call to action.
+
+      - The photograph is reused from HOME_PHOTO via grassePhotoSrc and applied as a CSS
+        background-image, so it is DECORATIVE with an empty text alternative — no
+        announced <img>, aria-hidden on the image layer (Requirements 16.6 / 9.3). The
+        headline/CTA carry all the meaning.
+      - The overlay text sits on `.hero__panel`, an opaque scrim surface using the shared
+        `--scrim-surface` token, so text/background contrast is computed against that
+        surface and never against the raw photo (Requirements 16.5 / 9.2).
+      - The headline is an <h2> (the page <h1> is the title in SiteLayout) so the single
+        top-level heading and valid heading order are preserved (Requirement 16.9).
+      - rem sizing + max-width + wrapping let the banner reflow with no clipping/overlap
+        and no horizontal scroll at narrow widths and 200% zoom (Requirements 16.7 / 5.3).
+    */}
+    <section class="hero" aria-labelledby="home-hero-heading">
+      <div
+        class="hero__photo"
+        aria-hidden="true"
+        style={`background-image: url(${HERO_PHOTO_SRC});`}
+      >
+      </div>
+      <div class="hero__panel">
+        <h2 id="home-hero-heading" class="hero__headline">{HERO.headline}</h2>
+        <p class="hero__tagline">{HERO.tagline}</p>
+        <p class="hero__actions">
+          {/* Primary CTA to the Service_Request_Form (Requirement 16.1). */}
+          <a class="home-link home-link--primary" href={SERVICE_REQUEST_HREF}>
+            {HERO.cta}
+          </a>
+          {/* Secondary CTA to the Scheduling_Page (Requirement 16.1). */}
+          <a class="home-link hero__secondary" href={SCHEDULING_HREF}>
+            {copy.heroSecondaryCta}
+          </a>
+        </p>
+      </div>
+    </section>
+
+    <p class="home-intro">{BUSINESS_DESCRIPTION}</p>
+
+    {/* Service_Area statement: the business serves Grasse (06130) and nearby towns (8.1). */}
+    <p class="home-service-area">{SERVICE_AREA_STATEMENT}</p>
+
+    {/*
+      Service_Cards (Requirements 16.2, 16.3, 16.6). The three services render as an
+      image-led card grid in the needhelp.com "nos prestations" shape: each card leads
+      with a distinct Grasse photograph, then the service title as a link to that
+      Service_Page, then the short description, then the existing per-language
+      service-request preselect link.
+
+      - Each card photo is DECORATIVE with an EMPTY text alternative (`alt=""` +
+        `aria-hidden="true"`): the card's title LINK names the service, so the card is
+        meaningful without the image and a non-empty alt would merely duplicate the link
+        text (Requirements 16.6 / 6.2). The image is wrapped in the title link's sibling,
+        not the link, so it is never the link's only content.
+      - The grid uses CSS grid auto-fit/minmax so it reflows to fewer columns on narrow
+        viewports and at 200% zoom with no horizontal scroll (Requirements 16.7 / 5.3).
+      - The service title stays an <h3> under this section's <h2>, keeping heading order
+        valid (Requirement 16.9), and the data-service-link hook + broken-link error
+        region behavior is unchanged (Requirement 1.7).
+    */}
+    <section class="home-section" aria-labelledby="home-services-heading">
+      <h2 id="home-services-heading">{HEADINGS.services}</h2>
+
+      {/* Broken-service-link region (Requirement 1.7). Hidden until the script shows it. */}
+      <div id="home-service-error" class="service-error" role="alert" hidden>
+        <p class="service-error__message">{copy.serviceError}</p>
+      </div>
+
+      <ul class="home-services">
+        {
+          serviceCards.map((service) => (
+            <li class="home-services__item">
+              {/* Decorative Grasse photo, empty alt + aria-hidden (16.6 / 6.2). */}
+              <img
+                class="home-services__photo"
+                src={service.photoSrc}
+                alt=""
+                aria-hidden="true"
+                loading="lazy"
+                decoding="async"
+              />
+              <div class="home-services__body">
+                <h3 class="home-services__title">
+                  <a
+                    class="home-services__link"
+                    href={service.href}
+                    data-service-link
+                  >
+                    {service.title}
+                  </a>
+                </h3>
+                <p class="home-services__desc">{service.description}</p>
+                <p class="home-services__cta">
+                  <a class="home-link" href={service.formHref}>
+                    {copy.requestPrefix}
+                    {service.title}
+                  </a>
+                </p>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    {/*
+      How_It_Works section (Requirements 13.1–13.4): an <h2> and an ordered list of the
+      >=3 steps, in order, that connect to the next actions — a link to the
+      Service_Request_Form and to the Scheduling_Page (Requirement 13.3).
+    */}
+    <section class="home-section" aria-labelledby="home-how-heading">
+      <h2 id="home-how-heading">{HOW_IT_WORKS.heading}</h2>
+      <p class="home-how__intro">{copy.howItWorksIntro}</p>
+      <ol class="home-how__steps">
+        {HOW_IT_WORKS.steps.map((step) => <li class="home-how__step">{step}</li>)}
+      </ol>
+      <p class="home-how__actions">
+        {copy.howItWorksOutroPrefix}
+        <a class="home-link" href={SERVICE_REQUEST_HREF}>
+          {copy.howItWorksFormLink}
+        </a>
+        {copy.howItWorksOr}
+        <a class="home-link" href={SCHEDULING_HREF}>
+          {copy.howItWorksSchedulingLink}
+        </a>
+        {copy.howItWorksOutroSuffix}
+      </p>
+    </section>
+
+    {/*
+      Reassurance_Element (Requirements 14.1–14.3): names Laurent Oudet and the Grasse
+      (06130) Service_Area, states no obligation, and that the business contacts the
+      Visitor to confirm. The copy already carries all of this; it is rendered faithfully.
+    */}
+    <section class="home-section" aria-labelledby="home-reassurance-heading">
+      <h2 id="home-reassurance-heading">{REASSURANCE.heading}</h2>
+      <p class="home-reassurance__body">{REASSURANCE.body}</p>
+    </section>
+
+    {/*
+      FAQ_Section (Requirements 15.1–15.4): an <h2> and >=3 Q&A pairs. Each pair uses a
+      <details>/<summary> disclosure with the question as an <h3> inside the summary, so
+      the heading order stays valid (h3 under this h2) and the control is keyboard
+      accessible. Answers that refer to requesting a service or booking a meeting link to
+      the Service_Request_Form / Scheduling_Page (Requirement 15.3).
+    */}
+    <section class="home-section" aria-labelledby="home-faq-heading">
+      <h2 id="home-faq-heading">{FAQ.heading}</h2>
+      <ul class="home-faq">
+        {
+          faqItems.map((item) => (
+            <li class="home-faq__item">
+              <details class="home-faq__details">
+                <summary class="home-faq__summary">
+                  <h3 class="home-faq__question" id={item.id}>
+                    {item.question}
+                  </h3>
+                </summary>
+                <div class="home-faq__answer">
+                  <p>{item.answer}</p>
+                  {item.withActions && (
+                    <p class="home-faq__actions">
+                      {copy.faqActionsPrefix}
+                      <a class="home-link" href={SERVICE_REQUEST_HREF}>
+                        {copy.faqFormLink}
+                      </a>
+                      {copy.howItWorksOr}
+                      <a class="home-link" href={SCHEDULING_HREF}>
+                        {copy.faqSchedulingLink}
+                      </a>
+                      {copy.howItWorksOutroSuffix}
+                    </p>
+                  )}
+                </div>
+              </details>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    {/*
+      Service_Request section. Kept on the Home_Page (not one of the five template
+      sections, but required content: a visible link to the Service_Request_Form,
+      Requirement 1.4). Placed after the five-section template run so the required
+      relative order (Hero → Service_Cards → How_It_Works → Reassurance → FAQ) is
+      preserved while the request CTA and contact details still live on the page.
+    */}
+    <section class="home-section" aria-labelledby="home-request-heading">
+      <h2 id="home-request-heading">{HEADINGS.request}</h2>
+      <p>{BUSINESS_INTRO}</p>
+      <p>
+        {/* Link to the Service_Request_Form (Requirement 1.4). */}
+        <a class="home-link home-link--primary" href={SERVICE_REQUEST_HREF}>
+          {copy.requestCta}
+        </a>
+      </p>
+    </section>
+
+    {/*
+      Contact section at the end of the page (Requirement 1.5): the business phone number
+      and email address. Retained verbatim; only its position moved so the template
+      sections keep their required top-to-bottom order (Requirement 16.4).
+    */}
+    <section class="home-section" aria-labelledby="home-contact-heading">
+      <h2 id="home-contact-heading">{HEADINGS.contact}</h2>
+      {/* Business phone number and email address (Requirement 1.5). */}
+      <p class="home-contact">
+        <span class="home-contact__label">{FOOTER_LABELS.phoneLabel} :</span>
+        <a class="home-link" href={`tel:${BUSINESS_PHONE_HREF}`}>{BUSINESS_PHONE}</a>
+      </p>
+      <p class="home-contact">
+        <span class="home-contact__label">{FOOTER_LABELS.emailLabel} :</span>
+        <a class="home-link" href={`mailto:${BUSINESS_EMAIL}`}>{BUSINESS_EMAIL}</a>
+      </p>
+    </section>
+  </div>
+</div>
+
+{/*
+  Progressive-enhancement error handling (Requirements 1.6, 1.7). This script only ADDS
+  behavior; with JavaScript disabled the Home_Page and all its links still work. See the
+  original Home_Page for the full rationale.
+*/}
+<script is:inline>
+  (function () {
+    var LOAD_BUDGET_MS = 3000;
+    var PROBE_TIMEOUT_MS = 10000;
+
+    function showLoadError() {
+      var errorEl = document.getElementById("home-load-error");
+      var contentEl = document.getElementById("home-content");
+      if (!errorEl) return;
+      errorEl.hidden = false;
+      if (contentEl) contentEl.hidden = true;
+      var retry = document.getElementById("home-load-retry");
+      if (retry) {
+        retry.addEventListener("click", function () {
+          window.location.reload();
+        });
+        retry.focus();
+      }
+    }
+
+    var loadTimer = window.setTimeout(function () {
+      var ready = document.querySelector('#home-content[data-home-ready="true"]');
+      if (!ready) {
+        showLoadError();
+      }
+    }, LOAD_BUDGET_MS);
+
+    window.addEventListener("DOMContentLoaded", function () {
+      var ready = document.querySelector('#home-content[data-home-ready="true"]');
+      if (ready) {
+        window.clearTimeout(loadTimer);
+      }
+    });
+
+    function showServiceError() {
+      var errorEl = document.getElementById("home-service-error");
+      if (!errorEl) return;
+      errorEl.hidden = false;
+      errorEl.scrollIntoView({ block: "nearest" });
+    }
+
+    function probe(href) {
+      if (typeof window.fetch !== "function") {
+        return Promise.resolve(true);
+      }
+      var controller =
+        typeof AbortController === "function" ? new AbortController() : null;
+      var timeoutId = controller
+        ? window.setTimeout(function () {
+            controller.abort();
+          }, PROBE_TIMEOUT_MS)
+        : null;
+      return window
+        .fetch(href, {
+          method: "HEAD",
+          redirect: "follow",
+          signal: controller ? controller.signal : undefined,
+        })
+        .then(function (res) {
+          if (timeoutId) window.clearTimeout(timeoutId);
+          return res.ok;
+        })
+        .catch(function () {
+          if (timeoutId) window.clearTimeout(timeoutId);
+          return false;
+        });
+    }
+
+    var serviceLinks = document.querySelectorAll("[data-service-link]");
+    Array.prototype.forEach.call(serviceLinks, function (link) {
+      link.addEventListener("click", function (event) {
+        var href = link.getAttribute("href");
+        if (!href || href === "#") {
+          event.preventDefault();
+          showServiceError();
+          return;
+        }
+        event.preventDefault();
+        probe(href).then(function (reachable) {
+          if (reachable) {
+            window.location.assign(href);
+          } else {
+            showServiceError();
+          }
+        });
+      });
+    });
+  })();
+</script>
+
+<style>
+  .page-scrim {
+    background-color: var(--scrim-surface, #faf6ef);
+    opacity: var(--scrim-opacity, 1);
+    padding: var(--space-md, 1rem);
+    border-radius: var(--radius, 0.375rem);
+  }
+
+  /*
+   * Hero_Banner (Requirement 16). A large Grasse photograph with the headline/tagline/CTA
+   * overlaid on an opaque scrim panel so text contrast holds against the panel surface,
+   * never against the raw photo (Requirements 16.5 / 9.2). rem sizing, max-width, and
+   * text wrapping keep it reflowing cleanly on narrow viewports and at 200% zoom with no
+   * clipping, overlap, or horizontal scroll (Requirements 16.7 / 5.3).
+   */
+  .hero {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    align-items: flex-end;
+    /* Push the white panel to the right edge of the banner (Home hero layout). */
+    justify-content: flex-end;
+    min-height: 20rem;
+    margin: 0 0 var(--space-xl, 2rem);
+    padding: var(--space-lg, 1.5rem);
+    border-radius: var(--radius, 0.375rem);
+    overflow: hidden;
+    background-color: var(--color-surface, #f4f6f8);
+  }
+
+  /* Decorative photo layer: covers the banner, sits behind the panel, announces nothing
+     (aria-hidden on the element). Requirement 16.6 / 9.3 — empty text alternative. */
+  .hero__photo {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-position: center center;
+    background-size: cover;
+    background-repeat: no-repeat;
+  }
+
+  /* Opaque scrim surface the overlay text is read against (Requirement 16.5 / 9.2). */
+  .hero__panel {
+    /* Keep the white panel tight around its text rather than spanning the banner:
+       size it to its content, capped so long lines still wrap on narrow screens. */
+    width: fit-content;
+    max-width: min(32rem, 100%);
+    padding: var(--space-sm, 0.75rem) var(--space-md, 1rem);
+    background-color: var(--scrim-surface, #faf6ef);
+    border-radius: var(--radius, 0.375rem);
+  }
+
+  .hero__headline {
+    margin: 0 0 var(--space-sm, 0.75rem);
+    font-size: var(--font-size-h2, 2rem);
+    line-height: var(--line-height-heading, 1.25);
+    overflow-wrap: break-word;
+  }
+
+  .hero__tagline {
+    margin: 0 0 var(--space-md, 1rem);
+    font-size: var(--font-size-h3, 1.5rem);
+    line-height: var(--line-height-body, 1.6);
+    max-width: 50ch;
+  }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--target-gap, 8px) var(--space-md, 1rem);
+    margin: 0;
+  }
+
+  /* Secondary hero CTA: a quieter, underlined link next to the primary button. */
+  .hero__secondary {
+    font-weight: 600;
+  }
+
+  .home-intro {
+    font-size: var(--font-size-h3, 1.5rem);
+    line-height: var(--line-height-body, 1.6);
+    max-width: 50ch;
+    margin: 0 0 var(--space-md, 1rem);
+  }
+
+  .home-service-area {
+    font-size: var(--font-size-body, 1.125rem);
+    line-height: var(--line-height-body, 1.6);
+    max-width: 60ch;
+    margin: 0 0 var(--space-xl, 2rem);
+    font-weight: 600;
+  }
+
+  .home-section {
+    margin: 0 0 var(--space-xl, 2rem);
+  }
+
+  /*
+   * Service_Cards (Requirement 16.2): image-led cards in a responsive grid. auto-fit +
+   * minmax lets the grid reflow from three columns to fewer (down to one) as the
+   * viewport narrows or the user zooms to 200%, with no horizontal scroll
+   * (Requirements 16.7 / 5.3). The min track is in rem so it shrinks with zoom.
+   */
+  .home-services {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: var(--space-lg, 1.5rem);
+  }
+
+  .home-services__item {
+    display: flex;
+    flex-direction: column;
+    background: var(--color-surface, #f4f6f8);
+    border: 1px solid var(--color-border, #767676);
+    border-radius: var(--radius, 0.375rem);
+    overflow: hidden;
+  }
+
+  /*
+   * Decorative card photo (Requirement 16.3 / 16.6): a real Grasse photograph leading
+   * the card, cropped to a consistent band. aria-hidden + alt="" so it announces
+   * nothing — the title link below carries the meaning. width:100% + height via aspect
+   * lets it scale with the card and reflow cleanly, never forcing horizontal scroll.
+   */
+  .home-services__photo {
+    display: block;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+    background-color: var(--color-surface-muted, #e9edf1);
+  }
+
+  .home-services__body {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-md, 1rem);
+  }
+
+  .home-services__title {
+    margin: 0 0 var(--space-xs, 0.5rem);
+  }
+
+  .home-services__desc {
+    margin: 0 0 var(--space-sm, 0.75rem);
+  }
+
+  .home-services__cta {
+    margin: 0;
+  }
+
+  .home-link,
+  .home-services__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--target-min, 44px);
+    color: var(--color-link, #0b5394);
+    text-decoration: underline;
+    font-weight: 600;
+  }
+
+  .home-link:hover,
+  .home-services__link:hover {
+    color: var(--color-link-hover, #073763);
+  }
+
+  .home-link:focus-visible,
+  .home-services__link:focus-visible {
+    outline: var(--focus-ring-width, 3px) solid var(--color-focus, #b45309);
+    outline-offset: var(--focus-ring-offset, 2px);
+  }
+
+  .home-link--primary {
+    padding: 0 var(--space-md, 1rem);
+    background: var(--color-primary, #0b5394);
+    color: var(--color-on-primary, #ffffff);
+    border-radius: var(--radius, 0.375rem);
+    text-decoration: none;
+  }
+
+  .home-link--primary:hover {
+    background: var(--color-link-hover, #073763);
+    color: var(--color-on-primary, #ffffff);
+  }
+
+  .home-contact {
+    margin: var(--space-xs, 0.5rem) 0;
+  }
+
+  .home-contact__label {
+    font-weight: 700;
+    margin-right: var(--space-xs, 0.5rem);
+  }
+
+  /* How_It_Works (Requirement 13). */
+  .home-how__intro {
+    margin: 0 0 var(--space-sm, 0.75rem);
+    max-width: 60ch;
+  }
+
+  .home-how__steps {
+    margin: 0 0 var(--space-md, 1rem);
+    padding-left: var(--space-lg, 1.5rem);
+    display: grid;
+    gap: var(--space-sm, 0.75rem);
+    max-width: 60ch;
+  }
+
+  .home-how__step {
+    line-height: var(--line-height-body, 1.6);
+  }
+
+  .home-how__actions,
+  .home-faq__actions {
+    margin: var(--space-sm, 0.75rem) 0 0;
+    line-height: var(--line-height-body, 1.6);
+    max-width: 60ch;
+  }
+
+  /* Reassurance_Element (Requirement 14). */
+  .home-reassurance__body {
+    margin: 0;
+    max-width: 60ch;
+    line-height: var(--line-height-body, 1.6);
+  }
+
+  /* FAQ_Section (Requirement 15). */
+  .home-faq {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-sm, 0.75rem);
+    max-width: 60ch;
+  }
+
+  .home-faq__item {
+    border: 1px solid var(--color-border, #767676);
+    border-radius: var(--radius, 0.375rem);
+    background: var(--color-surface, #f4f6f8);
+  }
+
+  .home-faq__summary {
+    display: flex;
+    align-items: center;
+    min-height: var(--target-min, 44px);
+    padding: var(--space-xs, 0.5rem) var(--space-md, 1rem);
+    cursor: pointer;
+  }
+
+  .home-faq__summary:focus-visible {
+    outline: var(--focus-ring-width, 3px) solid var(--color-focus, #b45309);
+    outline-offset: var(--focus-ring-offset, 2px);
+  }
+
+  .home-faq__question {
+    display: inline;
+    margin: 0;
+    font-size: var(--font-size-h3, 1.5rem);
+  }
+
+  .home-faq__answer {
+    padding: 0 var(--space-md, 1rem) var(--space-md, 1rem);
+  }
+
+  .home-faq__answer p {
+    margin: var(--space-sm, 0.75rem) 0 0;
+    line-height: var(--line-height-body, 1.6);
+  }
+
+  .load-error,
+  .service-error {
+    margin: 0 0 var(--space-lg, 1.5rem);
+    padding: var(--space-md, 1rem);
+    border: 2px solid var(--color-error, #b00020);
+    border-radius: var(--radius, 0.375rem);
+    background: var(--color-bg, #ffffff);
+  }
+
+  .load-error__message,
+  .service-error__message {
+    margin: 0 0 var(--space-sm, 0.75rem);
+    color: var(--color-error, #b00020);
+    font-weight: 600;
+  }
+
+  .service-error__message {
+    margin-bottom: 0;
+  }
+
+  .load-error__retry {
+    min-height: var(--target-min, 44px);
+    min-width: var(--target-min, 44px);
+    padding: 0 var(--space-md, 1rem);
+    font-size: var(--font-size-body, 1.125rem);
+    font-weight: 700;
+    color: var(--color-on-primary, #ffffff);
+    background: var(--color-primary, #0b5394);
+    border: none;
+    border-radius: var(--radius, 0.375rem);
+    cursor: pointer;
+  }
+
+  .load-error__retry:hover {
+    background: var(--color-link-hover, #073763);
+  }
+
+  .load-error__retry:focus-visible {
+    outline: var(--focus-ring-width, 3px) solid var(--color-focus, #b45309);
+    outline-offset: var(--focus-ring-offset, 2px);
+  }
+</style>

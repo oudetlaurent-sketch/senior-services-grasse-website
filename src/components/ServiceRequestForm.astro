@@ -1,0 +1,389 @@
+---
+/**
+ * ServiceRequestForm — the body of the Service_Request_Form page, rendered inside
+ * {@link SiteLayout} (design §4, "Service Request Form").
+ *
+ * Factored out of the per-language page files (src/pages/service-request.astro and
+ * src/pages/en/service-request.astro) so the SAME native `<form>` renders in both
+ * languages. All labels, hints, placeholders, the `<select>` option text, the error
+ * chrome, and the submit control are read for the active `language` (Requirement 7.6);
+ * the field rules and the `<option>` *values* (stable {@link ServiceKey} ids) are
+ * unchanged by language.
+ *
+ * The form posts to the SHARED endpoint `POST /api/service-request` in both languages
+ * (design §5): the English form submits to the same endpoint as the French one. The
+ * native form works with no JavaScript; the inline script only ADDS value retention,
+ * `?service=` preselection, and the 422 re-render affordances (Requirements 2.4, 4.4–4.6).
+ */
+import { SERVICE_KEYS } from "../content/services.ts";
+import { BUSINESS_INFO } from "../content/business.ts";
+import { getMessages } from "../content/i18n.ts";
+import { pagePath } from "../domain/navigation.ts";
+import { readPreselectedService } from "../domain/service-link.ts";
+import type { Language } from "../domain/types.ts";
+
+interface Props {
+  /** The active Supported_Language; selects the form copy and the per-language route. */
+  language: Language;
+}
+
+const { language } = Astro.props;
+const messages = getMessages(language);
+
+// Field length bounds mirror the validation module (Requirement 4.1), surfaced as native
+// hints while the server stays authoritative.
+const LIMITS = {
+  name: { min: 1, max: 100 },
+  phone: { min: 1, max: 20 },
+  email: { max: 254 },
+  description: { max: 2000 },
+} as const;
+
+// Server-side preselection for a direct (no-JS) request (Requirement 2.4). The query
+// parameter is language-agnostic (?service=<key>), so this works for both forms.
+const preselectedService = readPreselectedService(
+  Astro.url.pathname + Astro.url.search,
+);
+
+// The service-area note reuses the single source of truth, in the active language (8.3).
+const serviceAreaStatement = messages.footer.serviceAreaStatement;
+
+// Per-language route of THIS form page, handed to the inline script so the 422 contract
+// and the preselection re-apply resolve against the right path.
+const FORM_PATH = pagePath(language, "service-request");
+
+// Localized form chrome. The service `<option>` text comes from the localized service
+// titles (Requirement 7.6); the option values stay the stable ServiceKey ids.
+const copy =
+  language === "fr"
+    ? {
+        intro:
+          "Dites-nous ce dont vous avez besoin et comment vous joindre, et nous vous recontacterons. Les champs marqués d'un",
+        introSuffix: "sont obligatoires.",
+        errorSummaryTitle: "Un problème est survenu avec votre demande",
+        nameLabel: "Nom",
+        phoneLabel: "Numéro de téléphone",
+        phoneHint: "Uniquement des chiffres, des espaces et les caractères + - ( ).",
+        emailLabel: messages.emailLabel,
+        serviceLabel: "Service",
+        servicePlaceholder: "Veuillez choisir un service",
+        descriptionLabel: "Comment pouvons-nous vous aider ? (facultatif)",
+        submit: "Envoyer la demande",
+        genericFieldError: "Ce champ est invalide.",
+      }
+    : {
+        intro:
+          "Tell us what you need and how to reach you, and we'll get back to you. Fields marked with a",
+        introSuffix: "are required.",
+        errorSummaryTitle: "There was a problem with your request",
+        nameLabel: "Name",
+        phoneLabel: "Phone number",
+        phoneHint: "Digits, spaces, and the characters + - ( ) only.",
+        emailLabel: messages.emailLabel,
+        serviceLabel: "Service",
+        servicePlaceholder: "Please choose a service",
+        descriptionLabel: "How can we help you? (optional)",
+        submit: "Send request",
+        genericFieldError: "This field is invalid.",
+      };
+---
+
+<p class="form-intro">
+  {copy.intro}
+  <span class="req-marker" aria-hidden="true">*</span> {copy.introSuffix}
+</p>
+
+{/* Service-area indication (Requirement 8.3), in the active language. */}
+<p class="service-area-note">{serviceAreaStatement}</p>
+
+{/* Error-summary region (Requirement 4.4). Hidden on a clean page; the 422 mechanism and
+    the hydration script reveal it, fill it, and MOVE FOCUS to it. */}
+<div id="form-error-summary" class="error-summary" role="alert" tabindex="-1" hidden>
+  <h2 class="error-summary__title" id="form-error-summary-title">
+    {copy.errorSummaryTitle}
+  </h2>
+  <ul class="error-summary__list" id="form-error-summary-list"></ul>
+</div>
+
+<form class="request-form" method="post" action="/api/service-request" novalidate>
+  {/* Name — text, required, 1–100 (Requirements 4.1, 4.2, 6.6). */}
+  <div class="field">
+    <label class="field__label" for="field-name">
+      {copy.nameLabel} <span class="req-marker" aria-hidden="true">*</span>
+    </label>
+    <input
+      class="field__control"
+      id="field-name"
+      name="name"
+      type="text"
+      autocomplete="name"
+      required
+      aria-required="true"
+      minlength={LIMITS.name.min}
+      maxlength={LIMITS.name.max}
+      aria-describedby="error-name"
+    />
+    <p class="field__error" id="error-name" hidden></p>
+  </div>
+
+  {/* Phone — tel, required, 1–20 (Requirements 4.1, 4.2, 4.6, 6.6). */}
+  <div class="field">
+    <label class="field__label" for="field-phone">
+      {copy.phoneLabel} <span class="req-marker" aria-hidden="true">*</span>
+    </label>
+    <input
+      class="field__control"
+      id="field-phone"
+      name="phone"
+      type="tel"
+      autocomplete="tel"
+      inputmode="tel"
+      required
+      aria-required="true"
+      minlength={LIMITS.phone.min}
+      maxlength={LIMITS.phone.max}
+      aria-describedby="hint-phone error-phone"
+    />
+    <p class="field__hint" id="hint-phone">{copy.phoneHint}</p>
+    <p class="field__error" id="error-phone" hidden></p>
+  </div>
+
+  {/* Email — email, optional, up to 254 (Requirements 4.1, 4.5, 6.6). "Email" label (10.3). */}
+  <div class="field">
+    <label class="field__label" for="field-email">{copy.emailLabel}</label>
+    <input
+      class="field__control"
+      id="field-email"
+      name="email"
+      type="email"
+      autocomplete="email"
+      maxlength={LIMITS.email.max}
+      aria-describedby="error-email"
+    />
+    <p class="field__error" id="error-email" hidden></p>
+  </div>
+
+  {/* Service — select of the three services, required (Requirements 4.1, 4.2, 6.6). */}
+  <div class="field">
+    <label class="field__label" for="field-service">
+      {copy.serviceLabel} <span class="req-marker" aria-hidden="true">*</span>
+    </label>
+    {/* Option text is localized; option values stay the stable ServiceKey ids. */}
+    <select
+      class="field__control"
+      id="field-service"
+      name="service"
+      required
+      aria-required="true"
+      aria-describedby="error-service"
+    >
+      <option value="" disabled selected={preselectedService === null}>
+        {copy.servicePlaceholder}
+      </option>
+      {
+        SERVICE_KEYS.map((key) => (
+          <option value={key} selected={preselectedService === key}>
+            {messages.services[key].title}
+          </option>
+        ))
+      }
+    </select>
+    <p class="field__error" id="error-service" hidden></p>
+  </div>
+
+  {/* Description — textarea, optional, 0–2000 (Requirements 4.1, 6.6). */}
+  <div class="field">
+    <label class="field__label" for="field-description">
+      {copy.descriptionLabel}
+    </label>
+    <textarea
+      class="field__control field__control--textarea"
+      id="field-description"
+      name="description"
+      rows="6"
+      maxlength={LIMITS.description.max}
+      aria-describedby="error-description"
+    ></textarea>
+    <p class="field__error" id="error-description" hidden></p>
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="button">{copy.submit}</button>
+  </div>
+</form>
+
+{/*
+  Progressive enhancement for preselection and the 422 re-render (Requirements 2.4,
+  4.4–4.6). This script only ADDS behavior; the native form submits and validates on the
+  server without it. The generic fallback error message is localized.
+*/}
+<script is:inline define:vars={{ formPath: FORM_PATH, genericFieldError: copy.genericFieldError }}>
+  (function () {
+    var FIELDS = ["name", "phone", "email", "service", "description"];
+    var params = new URLSearchParams(window.location.search);
+
+    FIELDS.forEach(function (field) {
+      if (!params.has(field)) return;
+      var value = params.get(field);
+      var el = document.getElementById("field-" + field);
+      if (!el) return;
+      el.value = value == null ? "" : value;
+    });
+
+    var serviceParam = params.get("service");
+    if (serviceParam) {
+      var select = document.getElementById("field-service");
+      if (select) {
+        for (var i = 0; i < select.options.length; i++) {
+          if (select.options[i].value === serviceParam) {
+            select.selectedIndex = i;
+            break;
+          }
+        }
+      }
+    }
+
+    var rawErrors = params.get("error");
+    if (!rawErrors) return;
+
+    var errors;
+    try {
+      errors = JSON.parse(rawErrors);
+    } catch (e) {
+      errors = null;
+    }
+    if (!Array.isArray(errors) || errors.length === 0) return;
+
+    var summary = document.getElementById("form-error-summary");
+    var summaryList = document.getElementById("form-error-summary-list");
+    if (!summary || !summaryList) return;
+
+    summaryList.innerHTML = "";
+
+    errors.forEach(function (err) {
+      if (!err || typeof err.field !== "string") return;
+      var field = err.field;
+      var message =
+        typeof err.message === "string" && err.message.length > 0
+          ? err.message
+          : genericFieldError;
+
+      var inline = document.getElementById("error-" + field);
+      if (inline) {
+        inline.textContent = message;
+        inline.hidden = false;
+      }
+      var control = document.getElementById("field-" + field);
+      if (control) {
+        control.setAttribute("aria-invalid", "true");
+      }
+
+      var li = document.createElement("li");
+      var link = document.createElement("a");
+      link.href = "#field-" + field;
+      link.textContent = message;
+      link.addEventListener("click", function (event) {
+        event.preventDefault();
+        var target = document.getElementById("field-" + field);
+        if (target && typeof target.focus === "function") target.focus();
+      });
+      li.appendChild(link);
+      summaryList.appendChild(li);
+    });
+
+    summary.hidden = false;
+    if (typeof summary.focus === "function") summary.focus();
+  })();
+</script>
+
+<style>
+  .form-intro {
+    max-width: 60ch;
+    margin: 0 0 var(--space-lg, 1.5rem);
+  }
+
+  .service-area-note {
+    max-width: 60ch;
+    margin: 0 0 var(--space-lg, 1.5rem);
+    color: var(--color-text-muted, #595959);
+  }
+
+  .req-marker {
+    color: var(--color-error, #b00020);
+    font-weight: 700;
+  }
+
+  .request-form {
+    max-width: 40rem;
+  }
+
+  .field {
+    margin: 0 0 var(--space-lg, 1.5rem);
+  }
+
+  .field__label {
+    display: block;
+    font-weight: 700;
+    margin: 0 0 var(--space-xs, 0.5rem);
+  }
+
+  .field__control {
+    display: block;
+    width: 100%;
+  }
+
+  .field__control--textarea {
+    resize: vertical;
+  }
+
+  .field__hint {
+    margin: var(--space-xs, 0.5rem) 0 0;
+    color: var(--color-text-muted, #595959);
+    font-size: var(--font-size-small, 1rem);
+  }
+
+  .field__error {
+    margin: var(--space-xs, 0.5rem) 0 0;
+    color: var(--color-error, #b00020);
+    font-weight: 600;
+  }
+
+  .field__control[aria-invalid="true"] {
+    border-color: var(--color-error, #b00020);
+    outline: 1px solid var(--color-error, #b00020);
+  }
+
+  .error-summary {
+    max-width: 40rem;
+    margin: 0 0 var(--space-lg, 1.5rem);
+    padding: var(--space-md, 1rem);
+    border: 2px solid var(--color-error, #b00020);
+    border-radius: var(--radius, 0.375rem);
+    background: var(--color-bg, #ffffff);
+  }
+
+  .error-summary:focus-visible {
+    outline: var(--focus-ring-width, 3px) solid var(--color-focus, #b45309);
+    outline-offset: var(--focus-ring-offset, 2px);
+  }
+
+  .error-summary__title {
+    margin: 0 0 var(--space-sm, 0.75rem);
+    color: var(--color-error, #b00020);
+    font-size: var(--font-size-h3, 1.5rem);
+  }
+
+  .error-summary__list {
+    margin: 0;
+    padding-left: 1.25rem;
+  }
+
+  .error-summary__list a {
+    color: var(--color-error, #b00020);
+    font-weight: 600;
+  }
+
+  .form-actions {
+    margin-top: var(--space-lg, 1.5rem);
+  }
+</style>

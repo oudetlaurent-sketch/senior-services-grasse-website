@@ -1,0 +1,21 @@
+---
+/**
+ * About_Page — French (default) route at `/about` (design §10, "About Page").
+ *
+ * Renders the shared {@link SiteLayout} with `language="fr"` (document `lang="fr"`,
+ * Requirement 7.7) and the French title "Qui suis-je ?" (the single top-level `<h1>`,
+ * Requirement 11.5), with the {@link AboutContent} body supplying Laurent Oudet's name
+ * and provisional professional biography for French (Requirements 11.2–11.4). Reachable
+ * from the Navigation_Menu on every page (wired in task 18.2).
+ */
+import SiteLayout from "../layouts/SiteLayout.astro";
+import AboutContent from "../components/AboutContent.astro";
+import { getMessages } from "../content/i18n.ts";
+
+const language = "fr" as const;
+const pageTitle = getMessages(language).nav.about;
+---
+
+<SiteLayout title={pageTitle} currentPage="about" language={language}>
+  <AboutContent language={language} />
+</SiteLayout>

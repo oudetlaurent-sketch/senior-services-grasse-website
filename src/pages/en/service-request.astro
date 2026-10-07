@@ -1,0 +1,23 @@
+---
+/**
+ * Service_Request_Form page — English route at `/en/service-request` (design §1,
+ * "Bilingual architecture").
+ *
+ * The English mirror of src/pages/service-request.astro: it renders the shared
+ * {@link SiteLayout} with `language="en"` (so the document declares `lang="en"`,
+ * Requirement 7.7) around the shared {@link ServiceRequestForm} body with
+ * `language="en"`, which reads the English form copy and posts to the SHARED
+ * `POST /api/service-request` endpoint — the English form submits to the same endpoint
+ * as the French one (Requirements 4.1, 7.1, 7.6).
+ */
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import ServiceRequestForm from "../../components/ServiceRequestForm.astro";
+import { getMessages } from "../../content/i18n.ts";
+
+const language = "en" as const;
+const pageTitle = getMessages(language).nav["service-request"];
+---
+
+<SiteLayout title={pageTitle} currentPage="service-request" language={language}>
+  <ServiceRequestForm language={language} />
+</SiteLayout>

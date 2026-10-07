@@ -1,0 +1,35 @@
+{
+  "name": "senior-services-website",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Public-facing accessible website for a local business serving senior customers.",
+  "engines": {
+    "node": ">=20 <21"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:a11y": "astro build && vitest run test/a11y.scan.test.ts"
+  },
+  "dependencies": {
+    "@astrojs/netlify": "^5.5.4",
+    "astro": "^4.16.18",
+    "nodemailer": "^6.9.16"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.9",
+    "@types/nodemailer": "^6.4.17",
+    "axe-core": "4.10.2",
+    "fast-check": "^3.23.1",
+    "linkedom": "0.18.5",
+    "netlify-cli": "^26.2.0",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

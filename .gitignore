@@ -1,0 +1,22 @@
+# build output
+dist/
+.output/
+
+# dependencies
+node_modules/
+
+# astro
+.astro/
+
+# env & secrets
+.env
+.env.*
+!.env.example
+
+# logs & os
+*.log
+.DS_Store
+
+# editor
+.vscode/
+.netlify/

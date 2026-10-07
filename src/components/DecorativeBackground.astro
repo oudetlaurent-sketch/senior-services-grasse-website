@@ -1,0 +1,109 @@
+---
+/**
+ * DecorativeBackground — a Grasse-themed, purely presentational background
+ * (design §9, "Decorative Background").
+ *
+ * Shown behind the content of the Home_Page and each Service_Page (Requirement 9.1),
+ * this layer evokes Grasse — the hilltop village, its flower fields, and its perfume
+ * heritage — through a REAL photograph from the business's own Grasse collection
+ * (design §9). The four optimized web assets live under `public/grasse/` and are served
+ * at the stable URL `/grasse/<key>.jpg`. The background conveys no information needed to
+ * use the site.
+ *
+ * Distinct per page (Requirement 9.8): there are four photographs for the four pages that
+ * carry a background (Home + the three Service_Pages), assigned 1:1. Each page passes the
+ * `photo` key it owns; this component maps the key to `/grasse/${photo}.jpg` (or honors an
+ * explicit `src`).
+ *
+ * Accessibility (Requirement 9.3): the background is DECORATIVE with an EMPTY text
+ * alternative. It is rendered as a CSS `background-image` on a `<div>` that is marked
+ * `aria-hidden="true"` and has no accessible name, so assistive technology does not
+ * announce it. It carries no interactive controls and is removed from the tab order
+ * (nothing focusable lives inside it). No `<img>` is emitted, so there is no non-empty
+ * `alt` to leak into the accessibility tree; were an `<img>` ever used here it would
+ * carry `alt="" aria-hidden="true"`.
+ *
+ * Contrast (Requirement 9.2): text never sits directly on the photo. This component
+ * paints only the decorative layer, fixed behind everything via a negative z-index; the
+ * solid scrim surface that text is read against is provided by the page content wrapper
+ * (`.page-scrim` in the page content) using the `--scrim-surface` token. Because the
+ * effective immediate background behind text is the opaque scrim surface — not the photo
+ * — the text/background contrast tokens continue to hold (see the verified ratios in
+ * `src/styles/tokens.css`).
+ *
+ * Readability (Requirement 9.4): this is a sizing-neutral layer behind the content. It
+ * declares no `rem`-based readability tokens and does not alter the layout box of the
+ * content, so the 18px minimum body text and the 200% zoom behavior from Requirement 5
+ * are unaffected.
+ *
+ * Presentational props only — no behavior, no data flow (design §9).
+ */
+import type { GrassePhotoKey } from "../domain/grasse-photos.ts";
+import { grassePhotoSrc } from "../domain/grasse-photos.ts";
+
+interface Props {
+  /** Which real Grasse photograph this page uses (distinct per page, Requirement 9.8). */
+  photo?: GrassePhotoKey;
+  /**
+   * Path to the optimized, web-displayable asset. Defaults to `/grasse/${photo}.jpg`.
+   * Supplying it directly lets a caller point at an alternate optimized asset while
+   * keeping the key for stable, distinct-per-page assignment.
+   */
+  src?: string;
+}
+
+const { photo = "img-2086", src } = Astro.props;
+
+// Resolve the committed web asset for this page's photo (design §9: `GrassePhotoKey` +
+// `src`). Decorative only; carries no meaning and announces nothing.
+const backgroundSrc = src ?? grassePhotoSrc(photo);
+---
+
+{/*
+  Decorative background layer. aria-hidden removes it from the accessibility tree so it
+  is announced to no one (Requirement 9.3); it holds no text and nothing focusable, so
+  it is not in the tab order. The chosen Grasse photograph is applied as a CSS
+  `background-image` via an inline style so the distinct-per-page asset is bound at
+  build time without emitting an announced `<img>`.
+*/}
+<div
+  class="decorative-background"
+  data-photo={photo}
+  aria-hidden="true"
+  style={`background-image: url(${backgroundSrc});`}
+>
+</div>
+
+<style>
+  /*
+   * A fixed, full-viewport layer sitting behind all page content (negative z-index).
+   * It is sizing-neutral: it adds no box to the content flow and declares no readability
+   * tokens, so Requirement 5's sizing and 200% zoom behavior are untouched (Requirement 9.4).
+   *
+   * The motif is a REAL, optimized Grasse photograph (design §9), applied as a CSS
+   * `background-image` set per page via an inline style on the element above. It is sized
+   * to cover the viewport and centered, so each primary page gets a distinct, warm
+   * Grasse-themed background (Requirements 9.1, 9.8). The solid scrim that preserves text
+   * contrast is applied by the page's `.page-scrim` wrapper, not here (Requirement 9.2).
+   */
+  .decorative-background {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none; /* never intercepts interaction; carries no controls */
+    /* Warm Provençal fallback wash shown before/behind the photo. */
+    background-color: #e9dcc3;
+    background-position: center center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+  }
+
+  /* Respect reduced-motion by keeping the layer completely static (it already is;
+     the fixed attachment can read as parallax to some users, so pin it on scroll). */
+  @media (prefers-reduced-motion: reduce) {
+    .decorative-background {
+      background-attachment: scroll;
+    }
+  }
+</style>

@@ -1,0 +1,17 @@
+# Netlify build configuration for the Astro hybrid site.
+# Static pages are published from `dist/`; the on-demand POST /api/service-request
+# route is deployed as a Netlify Function by @astrojs/netlify.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  # Match the project engines (>=20 <21). Keep in sync with package.json.
+  NODE_VERSION = "20"
+
+# NOTE: Set the SMTP secrets in the Netlify UI (Site settings > Environment
+# variables), NOT here — never commit secrets. Required at runtime for the
+# service-request notification email:
+#   SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS, EMAIL_FROM
+# Optional: BUSINESS_EMAIL (defaults to the address in src/content/business.ts).

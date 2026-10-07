@@ -1,0 +1,20 @@
+---
+/**
+ * Home_Page — English route at `/en/` (design §1, "Bilingual architecture").
+ *
+ * The English mirror of src/pages/index.astro: it renders the shared {@link SiteLayout}
+ * with `language="en"` (so the document declares `lang="en"`, Requirement 7.7) and the
+ * shared {@link HomeContent} body with `language="en"`, which reads every visitor-facing
+ * string from the English entries of the localized content model and resolves all
+ * internal links to the English (`/en/`) routes (Requirements 7.1, 7.6).
+ */
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import HomeContent from "../../components/HomeContent.astro";
+import { BUSINESS_INFO } from "../../content/business.ts";
+
+const language = "en" as const;
+---
+
+<SiteLayout title={BUSINESS_INFO.name} currentPage="home" language={language}>
+  <HomeContent language={language} />
+</SiteLayout>

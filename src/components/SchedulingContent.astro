@@ -1,0 +1,257 @@
+---
+/**
+ * SchedulingContent — the body of the Scheduling_Page, rendered inside {@link SiteLayout}
+ * (design §11, "Scheduling Page").
+ *
+ * Factored out of the per-language route files (src/pages/rendez-vous.astro and
+ * src/pages/en/schedule.astro) so the SAME markup renders in both languages, reading
+ * every visitor-facing string from the localized content model for the active `language`
+ * (Requirement 12.3). The French and English Scheduling_Pages differ only in their
+ * `language` prop.
+ *
+ * The page embeds the external Scheduling_Service (e.g. Calendly) behind a single
+ * documented booking-URL config value (`PUBLIC_SCHEDULING_URL`; see
+ * src/domain/scheduling.ts). From that config it resolves one of three states with the
+ * pure {@link resolveSchedulingState} helper (design §11, Requirements 12.2/12.4/12.5):
+ *
+ *  - **placeholder** (booking URL UNSET — the current default): clearly provisional
+ *    "online booking coming soon" copy (Requirement 12.5).
+ *  - **embed** (configured): the external Scheduling_Service in an accessible-named
+ *    `<iframe>`, so the Visitor books within the page (Requirement 12.2).
+ *  - **error-fallback** (configured but the embed fails to load): an error indication
+ *    plus the business email (oudet.laurent@gmail.com) and phone as an alternative way
+ *    to book, keeping the Visitor on the page — no redirect (Requirement 12.4).
+ *
+ * Because the site is static, the server-rendered markup reflects the build-time config:
+ * when configured, the embed is rendered with the fallback markup present but hidden; a
+ * small progressive-enhancement script reveals the fallback (and hides the embed) if the
+ * iframe does not load, so the Visitor always has a way to reach us without leaving the
+ * page. With no JavaScript the native `<iframe>` still loads the booking widget directly.
+ *
+ * Heading structure (Requirement 12.6): the single top-level `<h1>` is the layout title
+ * (`messages.scheduling.heading`); everything here is `<h2>`+ so there is one h1 and no
+ * skipped levels.
+ */
+import type { Language } from "../domain/types.ts";
+import { getMessages } from "../content/i18n.ts";
+import {
+  readSchedulingConfig,
+  resolveSchedulingState,
+} from "../domain/scheduling.ts";
+import {
+  BUSINESS_INFO,
+  phoneHref,
+} from "../content/business.ts";
+
+interface Props {
+  /** The active Supported_Language; selects which copy to render (Requirement 12.3). */
+  language: Language;
+}
+
+const { language } = Astro.props;
+const messages = getMessages(language);
+const scheduling = messages.scheduling;
+
+// The documented booking-URL config value. Read from the public build-time env var
+// PUBLIC_SCHEDULING_URL (see src/domain/scheduling.ts). UNSET by default, so the page
+// resolves to the coming-soon placeholder now (Requirement 12.5). Set the env var to the
+// external Scheduling_Service's embeddable URL to enable the embed.
+const config = readSchedulingConfig(import.meta.env.PUBLIC_SCHEDULING_URL);
+
+// Build-time state: `embedLoaded` cannot be known at build on a static site, so when a
+// booking URL is configured we render the embed optimistically and let the client reveal
+// the error-fallback if the iframe does not actually load. When unset we render the
+// placeholder (Requirement 12.5).
+const initialState = resolveSchedulingState(config, config.bookingUrl !== null);
+
+// Business contact details for the load-failure fallback (Requirement 12.4), read from
+// the shared BUSINESS_INFO source. The email is labeled with the WORD "Email" in both
+// languages (Requirement 10.3).
+const BUSINESS_EMAIL = BUSINESS_INFO.email;
+const BUSINESS_PHONE = BUSINESS_INFO.phone;
+const BUSINESS_PHONE_HREF = phoneHref();
+const EMAIL_LABEL = messages.emailLabel;
+const PHONE_LABEL = messages.footer.phoneLabel;
+
+// Accessible name for the third-party embed iframe. The embed's own internal conformance
+// is outside our control (design §11), so we at least give it a clear accessible name in
+// the current language.
+const EMBED_TITLE =
+  language === "fr"
+    ? "Calendrier de réservation en ligne"
+    : "Online booking calendar";
+---
+
+{/* instructions / chrome: h2 under the layout h1 (Requirement 12.6) */}
+<p class="scheduling-instructions">{scheduling.instructions}</p>
+
+{
+  initialState === "placeholder" ? (
+    /* Not configured: clearly provisional coming-soon copy (Requirement 12.5). */
+    <section class="scheduling-placeholder" aria-labelledby="scheduling-placeholder-heading">
+      <h2 id="scheduling-placeholder-heading">
+        {language === "fr" ? "Bientôt disponible" : "Coming soon"}
+      </h2>
+      <p>{scheduling.placeholder}</p>
+      {/* Give visitors a way to reach us in the meantime (email + phone). */}
+      <ul class="scheduling-contact">
+        <li>
+          <span class="scheduling-contact__label">{EMAIL_LABEL} : </span>
+          <a href={`mailto:${BUSINESS_EMAIL}`}>{BUSINESS_EMAIL}</a>
+        </li>
+        <li>
+          <span class="scheduling-contact__label">{PHONE_LABEL} : </span>
+          <a href={`tel:${BUSINESS_PHONE_HREF}`}>{BUSINESS_PHONE}</a>
+        </li>
+      </ul>
+    </section>
+  ) : (
+    /*
+      Configured: render the external Scheduling_Service embed, with the error-fallback
+      markup present but hidden. The progressive-enhancement script reveals the fallback
+      (and hides the embed) if the iframe does not load, keeping the Visitor on the page
+      (Requirement 12.4). With no JS the iframe loads the widget natively.
+    */
+    <div id="scheduling-embed-region">
+      <div id="scheduling-embed" class="scheduling-embed" data-booking-url={config.bookingUrl}>
+        <iframe
+          id="scheduling-iframe"
+          class="scheduling-embed__frame"
+          src={config.bookingUrl ?? undefined}
+          title={EMBED_TITLE}
+          loading="lazy"
+        />
+      </div>
+
+      {/* Load-failure fallback (Requirement 12.4): hidden until revealed on embed error. */}
+      <section
+        id="scheduling-error-fallback"
+        class="scheduling-fallback"
+        aria-labelledby="scheduling-fallback-heading"
+        role="alert"
+        hidden
+      >
+        <h2 id="scheduling-fallback-heading">
+          {language === "fr" ? "Réserver autrement" : "Another way to book"}
+        </h2>
+        <p>{scheduling.errorFallback}</p>
+        <ul class="scheduling-contact">
+          <li>
+            <span class="scheduling-contact__label">{EMAIL_LABEL} : </span>
+            <a href={`mailto:${BUSINESS_EMAIL}`}>{BUSINESS_EMAIL}</a>
+          </li>
+          <li>
+            <span class="scheduling-contact__label">{PHONE_LABEL} : </span>
+            <a href={`tel:${BUSINESS_PHONE_HREF}`}>{BUSINESS_PHONE}</a>
+          </li>
+        </ul>
+      </section>
+    </div>
+  )
+}
+
+{
+  initialState !== "placeholder" && (
+    /*
+      Progressive-enhancement load-failure handling (Requirement 12.4). This script only
+      ADDS behavior: it reveals the email/phone fallback and hides the embed if the iframe
+      fails to load (error event or a load watchdog), and never navigates away — the
+      Visitor stays on the Scheduling_Page. With JavaScript disabled the native iframe
+      still attempts to load the booking widget directly.
+    */
+    <script is:inline>
+      (function () {
+        var LOAD_BUDGET_MS = 10000;
+
+        function showFallback() {
+          var fallback = document.getElementById("scheduling-error-fallback");
+          var embed = document.getElementById("scheduling-embed");
+          if (!fallback || fallback.hidden === false) return;
+          fallback.hidden = false;
+          if (embed) embed.hidden = true;
+          fallback.scrollIntoView({ block: "nearest" });
+        }
+
+        var iframe = document.getElementById("scheduling-iframe");
+        if (!iframe) return;
+
+        var settled = false;
+        function markLoaded() {
+          settled = true;
+        }
+
+        iframe.addEventListener("load", markLoaded);
+        iframe.addEventListener("error", function () {
+          if (!settled) showFallback();
+        });
+
+        // Watchdog: if the embed has not reported a load within the budget, assume it
+        // failed to load and reveal the contact fallback (Requirement 12.4).
+        window.setTimeout(function () {
+          if (!settled) showFallback();
+        }, LOAD_BUDGET_MS);
+      })();
+    </script>
+  )
+}
+
+<style>
+  .scheduling-instructions {
+    font-size: var(--font-size-body, 1.125rem);
+    line-height: var(--line-height-body, 1.6);
+    max-width: 60ch;
+    margin: 0 0 var(--space-lg, 1.5rem);
+  }
+
+  .scheduling-embed {
+    margin: 0 0 var(--space-lg, 1.5rem);
+  }
+
+  .scheduling-embed__frame {
+    display: block;
+    width: 100%;
+    min-height: 40rem;
+    border: 1px solid var(--color-border, #767676);
+    border-radius: var(--radius, 0.375rem);
+  }
+
+  .scheduling-placeholder,
+  .scheduling-fallback {
+    margin: 0 0 var(--space-lg, 1.5rem);
+    padding: var(--space-md, 1rem);
+    border: 2px solid var(--color-border, #767676);
+    border-radius: var(--radius, 0.375rem);
+    background: var(--color-surface, #f4f6f8);
+  }
+
+  .scheduling-fallback {
+    border-color: var(--color-error, #b00020);
+  }
+
+  .scheduling-contact {
+    list-style: none;
+    margin: var(--space-sm, 0.75rem) 0 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-xs, 0.5rem);
+  }
+
+  .scheduling-contact__label {
+    font-weight: 700;
+    margin-right: var(--space-xs, 0.5rem);
+  }
+
+  .scheduling-contact a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--target-min, 44px);
+    color: var(--color-link, #0b5394);
+    text-decoration: underline;
+    font-weight: 600;
+  }
+
+  .scheduling-contact a:focus-visible {
+    outline: var(--focus-ring-width, 3px) solid var(--color-focus, #b45309);
+    outline-offset: var(--focus-ring-offset, 2px);
+  }
+</style>

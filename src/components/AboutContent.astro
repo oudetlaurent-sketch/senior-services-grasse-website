@@ -1,0 +1,131 @@
+---
+/**
+ * AboutContent — the body of the About_Page, rendered inside {@link SiteLayout}
+ * (design §10, "About Page").
+ *
+ * Factored out of the per-language page files (src/pages/about.astro and
+ * src/pages/en/about.astro) so the SAME markup renders in both languages, reading every
+ * visitor-facing string from the localized content model for the active `language`
+ * (Requirement 7.6). The French and English About_Pages differ only in their `language`
+ * prop; the structure is shared.
+ *
+ * Renders (Requirements 11.2, 11.3):
+ * - the name "Laurent Oudet" (11.2),
+ * - a short professional biography introducing him as an engineer (11.3),
+ *
+ * both drawn from `getMessages(language).about` so the bio is swapped for its final copy
+ * by editing the content model only — no structural change here (Requirement 11.4).
+ *
+ * Provisional handling (Requirement 11.4): while `about.provisional` is `true` the bio is
+ * placeholder copy, so the page shows a clearly provisional indication — a visible note
+ * marked up as a status region and associated to the bio via `aria-describedby` — that
+ * makes it obvious the copy is a placeholder to be replaced. The page is still a real,
+ * readable page; when `provisional` flips to `false` the note simply disappears.
+ *
+ * Heading structure (Requirement 11.5): the single top-level `<h1>` is supplied by
+ * {@link SiteLayout} (the page title). This body uses only `<h2>`+ so heading levels
+ * descend without skipping.
+ */
+import { getMessages } from "../content/i18n.ts";
+import type { Language } from "../domain/types.ts";
+
+interface Props {
+  /** The active Supported_Language; selects which copy to render. */
+  language: Language;
+}
+
+const { language } = Astro.props;
+
+// About_Page content for the active language: the name "Laurent Oudet" (Req 11.2), the
+// short professional biography (Req 11.3), and the `provisional` flag (Req 11.4).
+const about = getMessages(language).about;
+
+// Localized chrome around the content model: the subheading introducing Laurent, and the
+// provisional note shown while the bio is placeholder copy.
+const copy =
+  language === "fr"
+    ? {
+        introHeading: "Le parcours derrière le service",
+        provisionalNote:
+          "(Texte provisoire — à compléter : la biographie définitive remplacera ce " +
+          "texte prochainement.)",
+      }
+    : {
+        introHeading: "The person behind the service",
+        provisionalNote:
+          "(Provisional text — to be completed: the final biography will replace this " +
+          "copy soon.)",
+      };
+---
+
+<div class="page-scrim">
+  <article class="about">
+    {/* Subheading (h2) under the layout's single h1, so heading levels don't skip (11.5). */}
+    <section class="about__intro" aria-labelledby="about-intro-heading">
+      <h2 id="about-intro-heading">{copy.introHeading}</h2>
+
+      {/* The name "Laurent Oudet" (Requirement 11.2). */}
+      <p class="about__name">{about.name}</p>
+
+      {/* Short professional biography introducing him as an engineer (Requirement 11.3).
+          When the bio is provisional, it is described by the provisional note below so
+          assistive technology announces that the copy is placeholder. */}
+      <p
+        class="about__bio"
+        aria-describedby={about.provisional ? "about-provisional-note" : undefined}
+      >
+        {about.bio}
+      </p>
+
+      {
+        about.provisional && (
+          <p
+            id="about-provisional-note"
+            class="about__provisional"
+            role="note"
+            data-provisional="true"
+          >
+            {copy.provisionalNote}
+          </p>
+        )
+      }
+    </section>
+  </article>
+</div>
+
+<style>
+  .page-scrim {
+    background-color: var(--scrim-surface, #faf6ef);
+    opacity: var(--scrim-opacity, 1);
+    padding: var(--space-md, 1rem);
+    border-radius: var(--radius, 0.375rem);
+  }
+
+  .about__name {
+    font-size: var(--font-size-h3, 1.5rem);
+    font-weight: 700;
+    margin: 0 0 var(--space-sm, 0.75rem);
+  }
+
+  .about__bio {
+    font-size: var(--font-size-body, 1.125rem);
+    line-height: var(--line-height-body, 1.6);
+    max-width: 60ch;
+    margin: 0 0 var(--space-md, 1rem);
+  }
+
+  /* The provisional note is conveyed by more than color: it is parenthesized and
+     italicized, with a left border, so it reads as clearly placeholder regardless of
+     color perception (Requirement 11.4). */
+  .about__provisional {
+    font-size: var(--font-size-body, 1.125rem);
+    line-height: var(--line-height-body, 1.6);
+    max-width: 60ch;
+    margin: 0;
+    padding: var(--space-sm, 0.75rem) var(--space-md, 1rem);
+    font-style: italic;
+    border-left: 4px solid var(--color-accent, #b45309);
+    background: var(--color-surface, #f4f6f8);
+    border-radius: var(--radius, 0.375rem);
+  }
+</style>

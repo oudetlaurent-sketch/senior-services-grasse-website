@@ -1,0 +1,45 @@
+{
+    "folders": [
+		{
+			"path": ".."
+		}
+	],
+    "extensions": {
+        "recommendations": [
+            "ms-python.python",
+            "analytic-signal.preview-html",
+            "robocorp.robotframework-lsp",
+            "tomsaunders-code.workspace-explorer"
+        ]
+    },
+    "settings": {
+        "robot.language-server.python": "${workspaceFolder}/.venv/bin/python",
+        "robot.python.executable": "${workspaceFolder}/.venv/bin/python",
+        "robot.python.env": {
+            "PHASE": "PDT",
+            "PYTHONPATH": "${workspaceFolder}/.venv/lib/python3.11/site-packages:${workspaceFolder}:${workspaceFolder}/cyberark:${workspaceFolder}/oms_e2e_tools:${workspaceFolder}/oms_e2e_tools/lib:${workspaceFolder}/oms_e2e_tools/data:${workspaceFolder}/oms_e2e_tools/resources:${workspaceFolder}/tests:${workspaceFolder}/tests/libs:${workspaceFolder}/tests/libs/input_builders:${workspaceFolder}/tests/libs/injectors:${workspaceFolder}/tests/libs/digital_generate_request:${workspaceFolder}/tests/resources:${workspaceFolder}/certificates"
+        },
+        "python.languageServer": "Pylance",
+        "robot.pythonpath": [
+            "${workspaceFolder}/.venv/lib/python3.11/site-packages/",
+            "${workspaceFolder}/cyberark/",
+            "${workspaceFolder}/",
+            "${workspaceFolder}/oms_e2e_tools",
+            "${workspaceFolder}/tests",
+            "${workspaceFolder}/tests/libs/input_builders",
+            "${workspaceFolder}/tests/resources",
+            "${workspaceFolder}/tests/libs/injectors",
+            "${workspaceFolder}/tests/libs",
+            "${workspaceFolder}/tests/libs/digital_generate_request",
+            "${workspaceFolder}/oms_e2e_tools/lib",
+            "${workspaceFolder}/oms_e2e_tools/data",
+            "${workspaceFolder}/oms_e2e_tools/resources",
+            "${workspaceFolder}/certificates/"
+        ],
+        "workspaceExplorer.workspaceStorageDirectory": "${workspaceFolder}/",
+        "robot.workspaceSymbolsOnlyForOpenDocs": true,
+        "chat.tools.terminal.autoApprove": {
+            ".venv/bin/python": true
+        }
+    }
+}

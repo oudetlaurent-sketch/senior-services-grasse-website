@@ -1,0 +1,22 @@
+---
+/**
+ * Service_Request_Form page — French (default) route at `/service-request` (design §4).
+ *
+ * A thin per-language route: renders the shared {@link SiteLayout} with `language="fr"`
+ * (so the document declares `lang="fr"`, Requirement 7.7) around the shared
+ * {@link ServiceRequestForm} body, which reads the French form copy from the localized
+ * content model and posts to the SHARED `POST /api/service-request` endpoint
+ * (Requirements 4.1, 7.6). The English equivalent lives at
+ * src/pages/en/service-request.astro.
+ */
+import SiteLayout from "../layouts/SiteLayout.astro";
+import ServiceRequestForm from "../components/ServiceRequestForm.astro";
+import { getMessages } from "../content/i18n.ts";
+
+const language = "fr" as const;
+const pageTitle = getMessages(language).nav["service-request"];
+---
+
+<SiteLayout title={pageTitle} currentPage="service-request" language={language}>
+  <ServiceRequestForm language={language} />
+</SiteLayout>

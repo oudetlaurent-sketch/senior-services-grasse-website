@@ -1,0 +1,300 @@
+---
+/**
+ * NavigationMenu component (design §1, "Shared Layout and Navigation").
+ *
+ * Renders the site-wide Navigation_Menu as a `<nav aria-label="Main">` containing an
+ * ordered list of exactly seven links — Home, Computer Learning, Computer Repair,
+ * In-Home Repair, About, Scheduling, Service Request — in display order, each labeled by
+ * the title of its target page **in the active language** (Requirements 3.2, 7.6). The
+ * entries and their current-page flags come from the pure `buildNavigation(language,
+ * currentPage)` helper so the component and the property-based tests share one source of
+ * truth.
+ *
+ * The link matching the current page receives `aria-current="page"` and a persistent
+ * visual indicator (Requirement 3.5). That indicator is conveyed by more than color
+ * alone — a bold weight plus a thick underline bar in addition to a color change — so it
+ * does not rely on color perception. The menu sits at the top of the document and is
+ * sized so all five items are visible without scrolling (Requirement 3.1).
+ *
+ * Alongside the Main menu the component renders the **Language_Selector** (design §1,
+ * Requirements 7.3, 7.4): a small, separately labeled `<nav>` of PLAIN LINKS — one per
+ * Supported_Language — each pointing at the SAME page in that language (resolved by the
+ * pure `buildLanguageSelector(currentPage, language)` helper, task 18.2). Because the
+ * selector is plain links it works with no JavaScript. The active language's link is
+ * marked `aria-current="true"` and conveyed by MORE THAN COLOR ALONE (bold weight + a
+ * thick underline bar, matching the current-page treatment); both languages always
+ * render so the selector shows the full choice. The selector reuses the senior-friendly
+ * 44x44px target-size and 8px spacing tokens and is grouped under an accessible name
+ * ("Langue" / "Language") so assistive tech announces it as a language chooser.
+ */
+import { buildNavigation, buildLanguageSelector } from "../domain/navigation.ts";
+import { getMessages } from "../content/i18n.ts";
+import type { Language, PageKey } from "../domain/types.ts";
+
+interface Props {
+  /** The page the visitor is currently viewing; its link is marked current. */
+  currentPage: PageKey;
+  /**
+   * The active Supported_Language. The menu labels are the page titles in this
+   * language and each href is that page's per-language route (Requirements 3.2, 7.6).
+   * Defaults to French — the default language — so French pages need not pass it.
+   */
+  language?: Language;
+}
+
+const { currentPage, language = "fr" } = Astro.props;
+// Resolve the SEVEN per-language menu entries, each labeled by its target page title in
+// `language` with its per-language href, and exactly one marked current (task 18.3,
+// Requirements 3.2, 3.5, 7.6).
+const entries = buildNavigation(language, currentPage);
+
+// Resolve the Language_Selector targets: one entry per Supported_Language, each the href
+// of the SAME page in that language, with the active language flagged (task 18.2,
+// Requirements 7.3, 7.4). Labels come from the dictionary ("Français" / "English") and
+// the selector's accessible group name is the active language's "Langue" / "Language".
+const languageOptions = buildLanguageSelector(currentPage, language);
+const messages = getMessages(language);
+const languageLabels = messages.languageSelector;
+const languageSelectorLabel = messages.languageSelectorLabel;
+// Summary label for the drop-down: the selector group name + the ACTIVE language's
+// display name (e.g. "Langue : Français" / "Language: English"). The caret is CSS-only.
+const activeLanguageLabel = languageLabels[language];
+---
+
+<nav aria-label="Main" class="site-nav">
+  <ul class="site-nav__list">
+    {
+      entries.map((entry) => (
+        <li class="site-nav__item">
+          <a
+            class="site-nav__link"
+            href={entry.href}
+            aria-current={entry.current ? "page" : undefined}
+            data-current={entry.current ? "true" : undefined}
+          >
+            {entry.title}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</nav>
+
+<nav aria-label={languageSelectorLabel} class="lang-selector">
+  {/*
+    Language_Selector as a top-right DROP-DOWN (disclosure) menu (Requirement 7.3). A
+    native <details>/<summary>: the summary is a compact control labeled for the current
+    language with a CSS caret, and the expanded panel lists both Supported_Languages as
+    plain links to the current page in each language. Native disclosure = works with NO
+    JavaScript; the options are real links so switching language needs no script. The
+    outer <nav class="lang-selector"> is kept so the existing language-persistence click
+    handler (which listens on `.lang-selector`) and the audits still find it.
+  */}
+  <details class="lang-selector__details">
+    <summary class="lang-selector__summary">
+      <span class="lang-selector__summary-text">
+        {languageSelectorLabel} : {activeLanguageLabel}
+      </span>
+      <span class="lang-selector__caret" aria-hidden="true"></span>
+    </summary>
+    <ul class="lang-selector__list">
+      {
+        languageOptions.map((option) => (
+          <li class="lang-selector__item">
+            <a
+              class="lang-selector__link"
+              href={option.href}
+              lang={option.language}
+              hreflang={option.language}
+              aria-current={option.current ? "true" : undefined}
+              data-current={option.current ? "true" : undefined}
+            >
+              {languageLabels[option.language]}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </details>
+</nav>
+
+<style>
+  /* Layout: a horizontal row at the top of the page, wrapping gracefully so all five
+     items stay visible without scrolling at supported viewport sizes (Requirement 3.1). */
+  .site-nav {
+    width: 100%;
+  }
+
+  .site-nav__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    /* Minimum 8px spacing between adjacent interactive controls (Requirement 5.4). */
+    gap: var(--target-gap, 8px);
+  }
+
+  .site-nav__item {
+    display: flex;
+  }
+
+  .site-nav__link {
+    display: flex;
+    align-items: center;
+    /* Minimum 44x44px target size (Requirement 5.4). */
+    min-height: var(--target-min, 44px);
+    min-width: var(--target-min, 44px);
+    padding: 0.5rem 0.75rem;
+    color: var(--color-link, #0b5394);
+    text-decoration: none;
+    font-weight: 500;
+    /* Reserve space for the current-page underline bar so marking a link current does
+       not shift layout. */
+    border-bottom: 4px solid transparent;
+  }
+
+  .site-nav__link:hover {
+    text-decoration: underline;
+  }
+
+  /* Visible focus indicator distinct from the unfocused state (Requirement 6.5). */
+  .site-nav__link:focus-visible {
+    outline: 3px solid var(--color-focus, #a04000);
+    outline-offset: 2px;
+  }
+
+  /* Persistent current-page indicator conveyed by MORE THAN COLOR ALONE: a bold weight
+     and a thick underline bar in addition to the color change (Requirement 3.5). */
+  .site-nav__link[aria-current="page"] {
+    color: var(--color-nav-current, #073763);
+    font-weight: 700;
+    border-bottom-color: var(--color-nav-current, #073763);
+  }
+
+  /* Hover/active keep a readable, audited link color against the header's scrim surface
+     (--color-link-hover is verified >= 4.5:1 against --scrim-surface). */
+  .site-nav__link:hover,
+  .site-nav__link:active {
+    color: var(--color-link-hover, #073763);
+  }
+
+  /* Language_Selector (Requirements 7.3, 7.4) as a TOP-RIGHT drop-down (disclosure).
+     The outer nav spans the row so the <details> can be pushed to the right edge; the
+     disclosure panel is absolutely positioned under the summary so opening it does not
+     reflow the page. Works with no JavaScript (native <details>). */
+  .lang-selector {
+    width: 100%;
+    margin-top: var(--target-gap, 8px);
+    /* Push the drop-down to the top-right of the header. */
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .lang-selector__details {
+    position: relative;
+  }
+
+  /* The summary is the compact drop-down control. list-style:none hides the default
+     disclosure triangle (we draw our own caret) across browsers. */
+  .lang-selector__summary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--target-gap, 8px);
+    min-height: var(--target-min, 44px);
+    padding: 0.5rem 0.75rem;
+    background-color: var(--scrim-surface, #faf6ef);
+    border: 1px solid var(--color-border, #767676);
+    border-radius: var(--radius, 0.375rem);
+    color: var(--color-link, #0b5394);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+    white-space: nowrap;
+  }
+  .lang-selector__summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .lang-selector__summary:focus-visible {
+    outline: 3px solid var(--color-focus, #a04000);
+    outline-offset: 2px;
+  }
+
+  /* CSS caret that flips when the drop-down is open. */
+  .lang-selector__caret {
+    width: 0;
+    height: 0;
+    border-left: 0.3rem solid transparent;
+    border-right: 0.3rem solid transparent;
+    border-top: 0.4rem solid currentColor;
+  }
+  .lang-selector__details[open] .lang-selector__caret {
+    transform: rotate(180deg);
+  }
+
+  /* The expanded panel: a card anchored to the top-right under the summary. */
+  .lang-selector__list {
+    list-style: none;
+    margin: var(--target-gap, 8px) 0 0;
+    padding: var(--target-gap, 8px);
+    position: absolute;
+    right: 0;
+    top: 100%;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: var(--target-gap, 8px);
+    min-width: 100%;
+    background-color: var(--scrim-surface, #faf6ef);
+    border: 1px solid var(--color-border, #767676);
+    border-radius: var(--radius, 0.375rem);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  }
+
+  .lang-selector__item {
+    display: flex;
+  }
+
+  .lang-selector__link {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    /* Minimum 44x44px target size (Requirement 5.4). */
+    min-height: var(--target-min, 44px);
+    min-width: var(--target-min, 44px);
+    padding: 0.5rem 0.75rem;
+    color: var(--color-link, #0b5394);
+    text-decoration: none;
+    font-weight: 500;
+    border-radius: var(--radius, 0.375rem);
+  }
+
+  .lang-selector__link:hover {
+    text-decoration: underline;
+  }
+
+  /* Visible focus indicator distinct from the unfocused state (Requirement 6.5). */
+  .lang-selector__link:focus-visible {
+    outline: 3px solid var(--color-focus, #a04000);
+    outline-offset: 2px;
+  }
+
+  /* Current-language indicator conveyed by MORE THAN COLOR ALONE: a bold weight plus a
+     check mark, in addition to the color change (Requirements 7.3, 6.1). */
+  .lang-selector__link[aria-current="true"] {
+    color: var(--color-nav-current, #073763);
+    font-weight: 700;
+    text-decoration: underline;
+  }
+  .lang-selector__link[aria-current="true"]::after {
+    content: " \2713"; /* check mark */
+    margin-left: var(--target-gap, 8px);
+  }
+
+  /* Hover/active keep a readable, audited link color against the panel surface. */
+  .lang-selector__link:hover,
+  .lang-selector__link:active {
+    color: var(--color-link-hover, #073763);
+  }
+</style>

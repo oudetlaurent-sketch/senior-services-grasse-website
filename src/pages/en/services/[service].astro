@@ -1,0 +1,45 @@
+---
+/**
+ * Service_Page — English routes at `/en/services/<key>` (design §1, "Bilingual
+ * architecture").
+ *
+ * The English mirror of src/pages/services/[service].astro. `getStaticPaths` emits one
+ * static route per service key — keeping the stable {@link ServiceKey} ids in the URL —
+ * and each renders the shared {@link SiteLayout} with `language="en"` (so the document
+ * declares `lang="en"`, Requirement 7.7) around the shared {@link ServicePageContent}
+ * body with `language="en"`, which reads the English service copy and links to the
+ * English form (Requirements 2.2–2.4, 7.1, 7.6).
+ */
+import type { GetStaticPaths } from "astro";
+import SiteLayout from "../../../layouts/SiteLayout.astro";
+import ServicePageContent from "../../../components/ServicePageContent.astro";
+import { SERVICE_KEYS } from "../../../content/services.ts";
+import { getMessages } from "../../../content/i18n.ts";
+import type { ServiceKey } from "../../../domain/types.ts";
+
+/**
+ * Emit one static English route per service, keyed by the stable {@link ServiceKey}, so
+ * the three English Service_Pages are pre-rendered at build time under `/en/services/`
+ * (Requirements 2.1, 2.2, 7.2).
+ */
+export const getStaticPaths = (() => {
+  return SERVICE_KEYS.map((key) => ({
+    params: { service: key },
+    props: { serviceKey: key },
+  }));
+}) satisfies GetStaticPaths;
+
+interface Props {
+  serviceKey: ServiceKey;
+}
+
+const { serviceKey } = Astro.props;
+const language = "en" as const;
+
+// Page title (and current-page nav indicator) is the service's English title.
+const pageTitle = getMessages(language).services[serviceKey].title;
+---
+
+<SiteLayout title={pageTitle} currentPage={serviceKey} language={language}>
+  <ServicePageContent language={language} serviceKey={serviceKey} />
+</SiteLayout>

@@ -1,0 +1,313 @@
+---
+/**
+ * SiteLayout — the shared document skeleton every page renders through
+ * (design §1, "Shared Layout and Navigation").
+ *
+ * Provides:
+ * - A single top-level `<h1>` per page, fed by the `title` prop, so each page has
+ *   exactly one top-level heading and heading levels descend without skipping
+ *   (Requirement 6.7). Pages supply only `<h2>`+ content in the default slot.
+ * - A skip link as the first focusable element, letting keyboard and screen-reader
+ *   users jump straight to the `<main>` landmark (Requirements 6.3, 6.4).
+ * - The `NavigationMenu` (`<nav aria-label="Main">`) at the top of the document, with
+ *   all five links visible without scrolling (Requirements 3.1, 3.2) and the current
+ *   page marked (Requirement 3.5).
+ * - A `<footer>` carrying the business phone number and email address, exposed as
+ *   tel:/mailto: links (Requirement 1.5 contact details, surfaced site-wide).
+ *
+ * Global design tokens and base accessible styling live in src/styles (task 5.1). They
+ * are linked here by their expected paths so they apply as soon as task 5.1 lands; the
+ * component's own inline styles provide sensible fallbacks (via CSS custom-property
+ * defaults) in the meantime.
+ */
+import NavigationMenu from "../components/NavigationMenu.astro";
+import type { Language, PageKey } from "../domain/types.ts";
+import { BUSINESS_INFO, phoneHref } from "../content/business.ts";
+import { getMessages } from "../content/i18n.ts";
+import { buildLanguageSelector } from "../domain/navigation.ts";
+// Global design tokens and base accessible styling (task 5.1). Imported here so
+// Astro bundles and emits them as a hashed stylesheet applied to every page that
+// renders through this layout (Requirements 5.1, 5.2, 5.4, 6.5). base.css @imports
+// tokens.css, so this single import pulls in both.
+import "../styles/base.css";
+
+interface Props {
+  /** Page title: used for the document `<title>` and the single top-level `<h1>`. */
+  title: string;
+  /** The page currently being viewed; its Navigation_Menu link is marked current. */
+  currentPage: PageKey;
+  /**
+   * The page's Supported_Language. Sets the root `<html lang>` (`lang="fr"` /
+   * `lang="en"`, Requirement 7.7), the language the Navigation_Menu renders in, and the
+   * language the skip link and footer labels are drawn from (Requirement 7.6). Defaults
+   * to French — the default language — so French pages need not pass it.
+   */
+  language?: Language;
+}
+
+const { title, currentPage, language = "fr" } = Astro.props;
+
+// Localized UI chrome for this page's language: the skip-link label and the footer
+// contact-block labels come from the dictionary so each per-language route renders its
+// own chrome (Requirement 7.6). The email label is the WORD "Email" in both languages
+// (Requirement 10.3).
+const messages = getMessages(language);
+const skipLinkLabel = messages.skipLink;
+const footerLabels = messages.footer;
+
+// Business contact details surfaced in the footer on every page, read from the single
+// BUSINESS_INFO source. The site-wide contact details carry the business name, the
+// French-formatted phone, and the email only — no postal address or postal code
+// (Requirements 7.9, 8.2). The Home_Page (task 8.1) presents the same details as
+// primary content.
+const BUSINESS_NAME = BUSINESS_INFO.name;
+// The contact area (footer) heads its phone/email block with the literal "Contact",
+// distinct from the full business identity (BUSINESS_INFO.name) used in the nav.
+const CONTACT_NAME = "Contact";
+const BUSINESS_PHONE = BUSINESS_INFO.phone;
+const BUSINESS_PHONE_HREF = phoneHref();
+const BUSINESS_EMAIL = BUSINESS_INFO.email;
+
+// Per-page language mapping for `hreflang` alternates and the persistence script
+// (Requirement 7.5). `buildLanguageSelector(currentPage, language)` resolves this page's
+// equivalent route in each Supported_Language from the SAME shared source the
+// Language_Selector links use (src/domain/navigation.ts), so each page is paired with
+// its translation. French is also exposed as the `x-default`.
+const languageAlternates = buildLanguageSelector(currentPage, language);
+const alternateByLanguage = Object.fromEntries(
+  languageAlternates.map((alt) => [alt.language, alt.href]),
+) as Record<Language, string>;
+// Minimal, safe data the inline persistence script needs: the current page's language
+// and its equivalent href in each language. Serialized as JSON into a data attribute so
+// the script reads a static per-page map with no templating in script text.
+const languageMap = {
+  current: language,
+  fr: alternateByLanguage.fr,
+  en: alternateByLanguage.en,
+};
+---
+
+<!doctype html>
+<html lang={language} data-lang-map={JSON.stringify(languageMap)}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <!-- hreflang alternates: pair this page with its equivalent in each Supported_Language
+         so search engines and the persistence script (below) know the translation of the
+         current page (Requirement 7.5). French is the x-default (the Primary_Language). -->
+    <link rel="alternate" hreflang="fr" href={alternateByLanguage.fr} />
+    <link rel="alternate" hreflang="en" href={alternateByLanguage.en} />
+    <link rel="alternate" hreflang="x-default" href={alternateByLanguage.fr} />
+    <!--
+      Language persistence — progressive enhancement (Requirement 7.5).
+
+      This runs as early as possible (before paint) so a returning Visitor whose remembered
+      language differs from the page they landed on is sent to that page's equivalent in
+      their remembered language, with NO flash of the wrong-language content. It is purely
+      additive: with JavaScript disabled nothing runs, French stays the default, and the
+      Language_Selector plain links let the Visitor switch manually.
+
+      Safety:
+      - It reads a STATIC per-page map (`data-lang-map` on <html>: { current, fr, en })
+        resolved at build time from buildLanguageSelector — no user input is interpolated.
+      - It only redirects when the stored language differs from THIS page's language AND
+        the Visitor has not made an explicit in-session choice (sessionStorage guard), so it
+        never fights a manual selection and cannot loop (after one redirect the destination
+        page's language matches the stored language, so the guard short-circuits).
+    -->
+    <script is:inline>
+      (function () {
+        try {
+          var el = document.documentElement;
+          var raw = el.getAttribute("data-lang-map");
+          if (!raw) return;
+          var map = JSON.parse(raw);
+          if (!map || (map.current !== "fr" && map.current !== "en")) return;
+
+          // An explicit in-session language choice (recorded by the selector click handler
+          // below) wins over the stored preference: do not redirect this session.
+          if (sessionStorage.getItem("langChosen") === "1") return;
+
+          // Stored preference: a `lang` cookie or localStorage ("fr" | "en").
+          function cookieLang() {
+            var m = document.cookie.match(/(?:^|;\s*)lang=(fr|en)(?:;|$)/);
+            return m ? m[1] : null;
+          }
+          var stored = cookieLang() || localStorage.getItem("lang");
+          if (stored !== "fr" && stored !== "en") return;
+
+          // Only redirect when the remembered language differs from THIS page's language,
+          // and only to a known, non-empty equivalent href (guards against loops).
+          if (stored === map.current) return;
+          var target = map[stored];
+          if (typeof target === "string" && target && target !== location.pathname) {
+            location.replace(target);
+          }
+        } catch (e) {
+          /* Any failure leaves the page as-is: the no-JS behavior (French default +
+             selector links) is the safe fallback. */
+        }
+      })();
+    </script>
+    <!-- Global design tokens and base accessible styling are bundled via the
+         `import "../styles/base.css"` in the frontmatter (task 5.1). -->
+  </head>
+  <body>
+    <!-- Skip link: first focusable element, lets keyboard users bypass the nav and jump
+         to the main content (Requirements 6.3, 6.4). -->
+    <a class="skip-link" href="#main-content">{skipLinkLabel}</a>
+
+    <header class="site-header">
+      <NavigationMenu currentPage={currentPage} language={language} />
+    </header>
+
+    <main id="main-content" class="site-main">
+      <h1>{title}</h1>
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <p class="site-footer__name">{CONTACT_NAME}</p>
+      <p class="site-footer__contact">
+        <span>{footerLabels.phoneLabel} : </span>
+        <a href={`tel:${BUSINESS_PHONE_HREF}`}>{BUSINESS_PHONE}</a>
+      </p>
+      <p class="site-footer__contact">
+        <span>{footerLabels.emailLabel} : </span>
+        <a href={`mailto:${BUSINESS_EMAIL}`}>{BUSINESS_EMAIL}</a>
+      </p>
+    </footer>
+
+    <!--
+      Record the chosen language when the Visitor uses the Language_Selector
+      (progressive enhancement, Requirement 7.5). The selector links (owned by
+      NavigationMenu, task 18.4) still navigate on their own with no JavaScript; this
+      handler only STORES the preference so a later visit can be routed to it, and marks
+      the choice as explicit for this session so the on-load redirect never overrides a
+      manual selection. The script reads the chosen language from the clicked link's
+      `hreflang` attribute (set by the selector markup) — it does not modify that markup.
+    -->
+    <script is:inline>
+      (function () {
+        try {
+          var selector = document.querySelector(".lang-selector");
+          if (!selector) return;
+          selector.addEventListener("click", function (event) {
+            var link =
+              event.target && event.target.closest
+                ? event.target.closest("a[hreflang]")
+                : null;
+            if (!link || !selector.contains(link)) return;
+            var chosen = link.getAttribute("hreflang");
+            if (chosen !== "fr" && chosen !== "en") return;
+            // Remember the choice for future visits (cookie + localStorage) and mark it
+            // explicit for this session so the on-load redirect yields to it.
+            try {
+              localStorage.setItem("lang", chosen);
+            } catch (e) {
+              /* storage may be unavailable; the cookie below still records it */
+            }
+            document.cookie =
+              "lang=" + chosen + ";path=/;max-age=31536000;samesite=lax";
+            try {
+              sessionStorage.setItem("langChosen", "1");
+            } catch (e) {
+              /* non-fatal: the link still navigates */
+            }
+          });
+        } catch (e) {
+          /* No-JS/failure path: the selector links navigate on their own. */
+        }
+      })();
+    </script>
+
+    <style>
+      /* Skip link is hidden until focused, then becomes clearly visible at the top of
+         the page with a distinct focus indicator (Requirements 6.3, 6.4, 6.5). */
+      .skip-link {
+        position: absolute;
+        left: -9999px;
+        top: 0;
+        z-index: 100;
+        padding: 0.75rem 1rem;
+        background: var(--color-bg, #ffffff);
+        color: var(--color-link, #0b3d91);
+        text-decoration: underline;
+        font-weight: 700;
+      }
+
+      .skip-link:focus,
+      .skip-link:focus-visible {
+        left: 0;
+        outline: 3px solid var(--color-focus, #a04000);
+        outline-offset: 2px;
+      }
+
+      /* The NavigationMenu and Language_Selector must never be read directly over the
+         Grasse Decorative_Background photo (Requirement 9.2). The DecorativeBackground is
+         a fixed, full-viewport layer behind everything, so without its own surface the
+         header's links would sit straight on the photograph — the reported
+         "blue link on the photo is unreadable" case. Give the header the SAME opaque scrim
+         surface the page content uses (--scrim-surface), so the nav + selector links are
+         read against that solid surface. The nav link/current/hover colors
+         (--color-link, --color-nav-current, --color-link-hover) are all verified >= 4.5:1
+         against --scrim-surface in tokens.css and the a11y audit, so this surface restores
+         readability in every state while keeping the existing color choices, rem sizing,
+         44x44 targets, 8px spacing, the non-color current-page cue, and the focus ring. */
+      .site-header {
+        padding: 0.5rem 1rem;
+        border-bottom: 1px solid var(--color-border, #767676);
+        /* Opaque surface so the header is never transparent over the photo. */
+        background-color: var(--scrim-surface, #faf6ef);
+        position: relative;
+        z-index: 1;
+      }
+
+      .site-main {
+        padding: 1rem;
+        max-width: 70rem;
+        margin: 0 auto;
+      }
+
+      /* The page title sits directly on the Grasse-red page mat, so it is rendered in the
+         on-page color (white) which clears AA against the red (8.14:1). The rest of the
+         page content lives on light surfaces (scrim, cards) and keeps its dark text. */
+      .site-main > h1 {
+        color: var(--color-on-page, #ffffff);
+      }
+
+      .site-footer {
+        margin-top: 2rem;
+        padding: 1rem;
+        /* Opaque light surface so the footer's dark/blue contact text keeps AA contrast
+           over the Grasse-red page mat (text is read against the surface, not the red). */
+        background-color: var(--scrim-surface, #faf6ef);
+        border-top: 1px solid var(--color-border, #c9c9c9);
+      }
+
+      .site-footer__name {
+        font-weight: 700;
+        margin: 0 0 0.5rem;
+      }
+
+      .site-footer__contact {
+        margin: 0.25rem 0;
+      }
+
+      /* Footer contact links share the senior-friendly 44x44 target size and spacing
+         (Requirement 5.4). */
+      .site-footer__contact a {
+        display: inline-flex;
+        align-items: center;
+        min-height: var(--target-min, 44px);
+        color: var(--color-link, #0b5394);
+      }
+
+      .site-footer__contact a:focus-visible {
+        outline: 3px solid var(--color-focus, #b45309);
+        outline-offset: 2px;
+      }
+    </style>
+  </body>
+</html>
