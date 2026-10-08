@@ -188,7 +188,3 @@ review remains part of the acceptance process.
 ## Node version
 
 Requires Node 20 (see `engines` in `package.json`).
-
-<!-- CI check: 2026-10-08T09:27:19Z -->
-
-<!-- CI check 2: 2026-10-08T09:38:44Z -->
