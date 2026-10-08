@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve, join } from "node:path";
 import { parseHTML } from "linkedom";
 import { ensureBuiltSite } from "./support/build-site.js";
-import { BUSINESS_INFO } from "../src/content/business.js";
+import { BUSINESS_INFO, phoneHref } from "../src/content/business.js";
 import { getMessages } from "../src/content/i18n.js";
 import {
   NAV_ORDER,
@@ -36,7 +36,7 @@ import type { Language, PageKey } from "../src/domain/types.js";
  * the token/computed-style a11y scan):
  *  - Bilingual presence + per-language chrome for every page (7.1, 7.6).
  *  - Language_Selector round-trip at the HTML level, with the active language marked (7.3/7.4).
- *  - "Aide à la personne" identity + oudet.laurent@gmail.com + the "Email" label (never "Courriel")
+ *  - "Aide à la personne" identity + my.name@gmail.com + the "Email" label (never "Courriel")
  *    site-wide and on the Home_Page (10.1–10.3).
  *  - About_Page name + provisional bio in both languages, one h1, valid heading order (11.1/11.2/11.4).
  *  - Scheduling_Page coming-soon placeholder + email/phone fallback in both languages,
@@ -53,7 +53,7 @@ const distDir = resolve(projectRoot, "dist");
 const SUPPORTED_LANGUAGES: readonly Language[] = ["fr", "en"];
 
 /** The email the site must present site-wide and on the Home_Page (10.2). */
-const BUSINESS_EMAIL = "oudet.laurent@gmail.com";
+const BUSINESS_EMAIL = "my.name@gmail.com";
 
 type Page = {
   /** Dist-relative POSIX path, e.g. `en/about/index.html`. */
@@ -373,30 +373,25 @@ describe("bilingual, identity, About, and Scheduling audit (task 22.5)", () => {
   // 11.1 / 11.2 / 11.4 — About_Page in both languages
   // -------------------------------------------------------------------------
 
-  it('the About_Page shows "Laurent Oudet" and a provisional-bio indication in both languages (11.2, 11.4)', () => {
+  it('the About_Page shows "My Name" and a provisional-bio indication in both languages (11.2, 11.4)', () => {
     for (const language of SUPPORTED_LANGUAGES) {
       const about = getMessages(language).about;
-      // The default build ships a provisional bio (Requirement 11.4).
-      expect(about.provisional, `${language} About bio must be provisional in the default build`).toBe(
-        true,
+      // The build now ships the FINAL bio (Requirement 11.4): provisional is false.
+      expect(about.provisional, `${language} About bio must be final (non-provisional)`).toBe(
+        false,
       );
 
       const { file, document } = pageFor(language, "about");
       const text = textOf(document);
-      expect(text, `${file}: About_Page must show the name "Laurent Oudet"`).toContain(
-        "Laurent Oudet",
+      expect(text, `${file}: About_Page must show the name "My Name"`).toContain(
+        "My Name",
       );
-      expect(about.name).toBe("Laurent Oudet");
+      expect(about.name).toBe("My Name");
 
-      // The provisional bio is marked up with a visible, data-flagged note so it reads as
-      // clearly placeholder (Requirement 11.4).
+      // A final bio shows NO provisional note (it only appears while provisional=true).
       const note = document.querySelector('[data-provisional="true"]');
-      expect(note, `${file}: About_Page must show a provisional-bio indication`).not.toBeNull();
-      expect(
-        (note!.textContent ?? "").trim().length,
-        `${file}: the provisional note must be non-empty`,
-      ).toBeGreaterThan(0);
-      // The bio from the content model is rendered on the page.
+      expect(note, `${file}: a final About bio must not show a provisional note`).toBeNull();
+      // The final bio from the content model is rendered on the page.
       expect(text, `${file}: About_Page must render the bio copy`).toContain(about.bio);
     }
   });
@@ -431,50 +426,62 @@ describe("bilingual, identity, About, and Scheduling audit (task 22.5)", () => {
   // 12.5 / 12.4 — Scheduling_Page: coming-soon placeholder + contact fallback
   // -------------------------------------------------------------------------
 
-  it("the Scheduling_Page shows the coming-soon placeholder in both languages (12.5)", () => {
+  it("the Scheduling_Page embeds the external Scheduling_Service in both languages (12.2)", () => {
     for (const language of SUPPORTED_LANGUAGES) {
-      const scheduling = getMessages(language).scheduling;
       const { file, document } = pageFor(language, "scheduling");
 
-      // The default build ships the booking URL unset, so the page is in the placeholder
-      // state: the provisional "coming soon" section is present and the embed is not.
-      const placeholder = document.querySelector(".scheduling-placeholder");
-      expect(placeholder, `${file}: Scheduling_Page must show the coming-soon placeholder`).not.toBeNull();
+      // The build ships a configured booking URL (PUBLIC_SCHEDULING_URL), so the page is
+      // in the embed state: the Scheduling_Service <iframe> is present and the
+      // coming-soon placeholder is not.
+      const embed = document.querySelector(".scheduling-embed");
+      expect(embed, `${file}: Scheduling_Page must embed the booking service`).not.toBeNull();
       expect(
-        document.querySelector(".scheduling-embed"),
-        `${file}: unconfigured Scheduling_Page must not render the embed`,
+        document.querySelector(".scheduling-placeholder"),
+        `${file}: a configured Scheduling_Page must not render the coming-soon placeholder`,
       ).toBeNull();
 
-      const text = textOf(document);
-      expect(text, `${file}: placeholder copy must be the ${language} "coming soon" text`).toContain(
-        scheduling.placeholder,
+      const iframe = document.querySelector("iframe#scheduling-iframe");
+      expect(iframe, `${file}: embed must render a booking <iframe>`).not.toBeNull();
+      const src = iframe!.getAttribute("src") ?? "";
+      expect(src, `${file}: iframe must point at the configured booking URL`).toContain(
+        "calendly.com/oudet-laurent/30min",
       );
+      // The embed iframe carries an accessible name (title).
+      expect(
+        (iframe!.getAttribute("title") ?? "").length,
+        `${file}: booking iframe must have an accessible name`,
+      ).toBeGreaterThan(0);
     }
   });
 
-  it("the Scheduling_Page placeholder exposes the email + phone contact fallback in both languages (12.4/12.5)", () => {
+  it("the Scheduling_Page keeps an email + phone fallback for embed load failure in both languages (12.4)", () => {
     for (const language of SUPPORTED_LANGUAGES) {
       const { file, document } = pageFor(language, "scheduling");
-      const placeholder = document.querySelector(".scheduling-placeholder");
-      expect(placeholder, `${file}: expected the placeholder section`).not.toBeNull();
+      // When configured, the error-fallback section is present (hidden until the embed
+      // fails to load) and exposes the email + phone as an alternative way to book.
+      const fallback = document.querySelector("#scheduling-error-fallback");
+      expect(fallback, `${file}: expected the embed-failure fallback section`).not.toBeNull();
 
-      const section = placeholder!;
+      const section = fallback!;
       const sectionText = (section.textContent ?? "").replace(/\s+/g, " ").trim();
-      // Email + phone as an alternative way to reach us while booking is unavailable.
-      expect(sectionText, `${file}: placeholder must show ${BUSINESS_EMAIL}`).toContain(
+      expect(sectionText, `${file}: fallback must show ${BUSINESS_EMAIL}`).toContain(
         BUSINESS_EMAIL,
       );
-      expect(sectionText, `${file}: placeholder must show the phone`).toContain(BUSINESS_INFO.phone);
+      expect(sectionText, `${file}: fallback must show the phone`).toContain(BUSINESS_INFO.phone);
       expect(
         section.querySelector(`a[href="mailto:${BUSINESS_EMAIL}"]`),
-        `${file}: placeholder email must be a mailto: link`,
+        `${file}: fallback email must be a mailto: link`,
       ).not.toBeNull();
-      expect(
-        section.querySelector('a[href^="tel:"]'),
-        `${file}: placeholder phone must be a tel: link`,
-      ).not.toBeNull();
-      // The email is labeled with the word "Email" (10.3) in the placeholder too.
-      expect(sectionText, `${file}: placeholder email must be labeled "Email"`).toContain("Email");
+      // The phone is a tel: link only when it contains digits; a placeholder number
+      // (e.g. "XX XX XX XX XX") renders as plain text instead of a dead link.
+      if (phoneHref(BUSINESS_INFO.phone)) {
+        expect(
+          section.querySelector('a[href^="tel:"]'),
+          `${file}: fallback phone must be a tel: link when it has digits`,
+        ).not.toBeNull();
+      }
+      // The email is labeled with the word "Email" (10.3) in the fallback too.
+      expect(sectionText, `${file}: fallback email must be labeled "Email"`).toContain("Email");
     }
   });
 

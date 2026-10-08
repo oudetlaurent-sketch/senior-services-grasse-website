@@ -101,7 +101,9 @@ const EMBED_TITLE =
         </li>
         <li>
           <span class="scheduling-contact__label">{PHONE_LABEL} : </span>
-          <a href={`tel:${BUSINESS_PHONE_HREF}`}>{BUSINESS_PHONE}</a>
+          {BUSINESS_PHONE_HREF
+            ? <a href={`tel:${BUSINESS_PHONE_HREF}`}>{BUSINESS_PHONE}</a>
+            : <span>{BUSINESS_PHONE}</span>}
         </li>
       </ul>
     </section>
@@ -142,7 +144,9 @@ const EMBED_TITLE =
           </li>
           <li>
             <span class="scheduling-contact__label">{PHONE_LABEL} : </span>
-            <a href={`tel:${BUSINESS_PHONE_HREF}`}>{BUSINESS_PHONE}</a>
+            {BUSINESS_PHONE_HREF
+              ? <a href={`tel:${BUSINESS_PHONE_HREF}`}>{BUSINESS_PHONE}</a>
+              : <span>{BUSINESS_PHONE}</span>}
           </li>
         </ul>
       </section>

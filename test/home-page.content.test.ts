@@ -74,7 +74,12 @@ describe("Home_Page content and error paths (task 8.2, French)", () => {
 
   it("displays the French business phone number and email address (1.5, 7.4)", () => {
     // Phone as a tel: link with the French-formatted number, email as a mailto: link.
-    expect(html).toContain(`href="tel:${phoneHref(BUSINESS_INFO.phone)}"`);
+    // tel: link only when the number has digits; a placeholder (no digits) is plain text.
+    if (phoneHref(BUSINESS_INFO.phone)) {
+      expect(html).toContain(`href="tel:${phoneHref(BUSINESS_INFO.phone)}"`);
+    } else {
+      expect(html).toContain(BUSINESS_INFO.phone);
+    }
     expect(html).toContain(BUSINESS_INFO.phone);
     expect(html).toContain(`href="mailto:${BUSINESS_INFO.email}"`);
     expect(html).toContain(BUSINESS_INFO.email);

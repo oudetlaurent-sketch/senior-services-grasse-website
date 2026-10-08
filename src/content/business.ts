@@ -32,8 +32,8 @@ import type { BusinessInfo } from "../domain/types.js";
  */
 export const BUSINESS_INFO: BusinessInfo = {
   name: "Aide à la personne",
-  phone: "07 81 18 01 50",
-  email: "oudet.laurent@gmail.com",
+  phone: "XX XX XX XX XX",
+  email: "my.name@gmail.com",
   serviceAreaStatement:
     "Nous intervenons à Grasse (06130) et dans les communes alentour, " +
     "sur toute la Riviera : Mouans-Sartoux, Pégomas, Le Tignet, Peymeinade et au-delà.",
@@ -50,6 +50,11 @@ export const BUSINESS_INFO: BusinessInfo = {
  */
 export function phoneHref(phone: string = BUSINESS_INFO.phone): string {
   const digits = phone.replace(/\D/g, "");
+  // No digits at all (e.g. a placeholder like "XX XX XX XX XX"): no usable tel: target,
+  // so return an empty string and callers render the number as plain text, not a link.
+  if (digits.length === 0) {
+    return "";
+  }
   // French domestic form "0XXXXXXXXX" -> international "+33XXXXXXXXX".
   if (digits.startsWith("0")) {
     return `+33${digits.slice(1)}`;

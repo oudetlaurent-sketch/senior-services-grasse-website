@@ -145,11 +145,11 @@ describe("Home_Page How It Works, Reassurance, and FAQ audit (task 27.1)", () =>
   // 14.1–14.3 — Reassurance_Element content
   // -------------------------------------------------------------------------
 
-  it("the Reassurance_Element names Laurent Oudet, Grasse (06130), and conveys no-obligation + will-contact (14.1–14.3)", () => {
+  it("the Reassurance_Element names My Name, Grasse (06130), and conveys no-obligation + will-contact (14.1–14.3)", () => {
     // Stable substrings of the ACTUAL rendered copy, per language (read from i18n.ts).
     const EXPECTED: Record<Language, readonly string[]> = {
-      fr: ["Laurent Oudet", "Grasse", "06130", "ne vous engage à rien", "recontactons"],
-      en: ["Laurent Oudet", "Grasse", "06130", "no obligation", "get back to you"],
+      fr: ["My Name", "Grasse", "06130", "ne vous engage à rien", "recontactons"],
+      en: ["My Name", "Grasse", "06130", "no obligation", "get back to you"],
     };
 
     for (const language of SUPPORTED_LANGUAGES) {

@@ -128,7 +128,7 @@ describe("email config shape", () => {
 
   it("defaults the recipient to the business inbox when BUSINESS_EMAIL is unset", () => {
     // All SMTP vars present, but no BUSINESS_EMAIL: businessTo falls back to
-    // BUSINESS_INFO.email (oudet.laurent@gmail.com) so submissions reach the owner.
+    // BUSINESS_INFO.email (my.name@gmail.com) so submissions reach the owner.
     const env: Record<string, string> = {
       [EMAIL_ENV_KEYS.host]: "smtp.example.com",
       [EMAIL_ENV_KEYS.port]: "587",
@@ -138,7 +138,7 @@ describe("email config shape", () => {
     };
     const config = loadEmailConfig(env);
     expect(config.businessTo).toBe(BUSINESS_INFO.email);
-    expect(config.businessTo).toBe("oudet.laurent@gmail.com");
+    expect(config.businessTo).toBe("my.name@gmail.com");
   });
 
   it("lets an explicit BUSINESS_EMAIL override the default recipient", () => {

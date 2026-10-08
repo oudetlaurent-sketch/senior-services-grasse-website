@@ -193,7 +193,7 @@ export type ValidationResult =
  * src/domain/about-photo.ts).
  */
 export type AboutContent = {
-  name: "Laurent Oudet";
+  name: "My Name";
   bio: string; // short professional biography (engineer)
   provisional: boolean; // true while bio is placeholder copy, false once final
   photoAlt: string; // meaningful alt text for the About photo of Laurent Oudet (per language)

@@ -252,8 +252,9 @@ describe("accessibility and readability scans (task 12.3)", () => {
     const onError = contrastRatio(color("--color-on-error")!, error);
     expect(onError, `text on error = ${onError.toFixed(2)}:1`).toBeGreaterThanOrEqual(CONTRAST_AA_NORMAL);
 
-    // The page <h1> sits directly on the Grasse-red page mat (--color-page); its text is
-    // rendered in --color-on-page and must clear AA against the red.
+    // The Grasse navy page mat (--color-page) frames the light reading surface. Any text
+    // placed directly on the mat uses --color-on-page; keep that pair AA as a safety
+    // invariant even though page content now sits on the light --scrim-surface panel.
     const page = color("--color-page");
     const onPage = color("--color-on-page");
     expect(page, "--color-page must be a hex color").not.toBeNull();

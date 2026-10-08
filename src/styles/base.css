@@ -36,7 +36,7 @@ body {
   font-size: var(--font-size-body); /* >= 18px (Requirement 5.1) */
   line-height: var(--line-height-body);
   color: var(--color-text);
-  /* Page background mat is the City of Grasse heraldic red; page content sits on light
+  /* Page background mat is the official City of Grasse navy blue; page content sits on light
      surfaces (scrim, cards, footer) over it so text contrast is preserved. */
   background-color: var(--color-page);
   /* Avoid horizontal scrolling at high zoom (supports Requirement 5.3). */

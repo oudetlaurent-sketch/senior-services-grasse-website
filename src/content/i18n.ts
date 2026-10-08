@@ -97,12 +97,12 @@ const FR: Messages = {
         "meilleur moment.",
     ],
   },
-  // Reassurance_Element (Requirements 14.1, 14.2, 14.3): names Laurent Oudet + Grasse
+  // Reassurance_Element (Requirements 14.1, 14.2, 14.3): names My Name + Grasse
   // (06130), states no obligation and that we contact the Visitor to confirm.
   reassurance: {
     heading: "En toute confiance",
     body:
-      "Derrière ce service, il y a une personne : Laurent Oudet, à Grasse (06130) et " +
+      "Derrière ce service, il y a une personne : My Name, à Grasse (06130) et " +
       "dans les communes alentour. Faire une demande ou prendre rendez-vous ne vous " +
       "engage à rien — c'est gratuit et sans création de compte. Nous vous recontactons " +
       "simplement pour confirmer avec vous le jour et l'heure qui vous arrangent.",
@@ -184,14 +184,15 @@ const FR: Messages = {
     },
   },
   about: {
-    name: "Laurent Oudet",
-    // Provisional placeholder bio (Requirement 11.4): swapped for the final copy by
-    // editing this entry only, and flipping `provisional` to false.
+    name: "My Name",
+    // Final About biography (Requirement 11.4): provisional flag is false.
     bio:
-      "Laurent Oudet, ingénieur… Une biographie plus complète arrive bientôt pour vous " +
-      "présenter le parcours et le savoir-faire derrière ce service de proximité.",
-    provisional: true,
-    photoAlt: "Laurent Oudet",
+      "Ingénieur chez Amadeus, j'ai occupé des responsabilités techniques et " +
+      "managériales au sein d'équipes internationales. J'ai contribué à résoudre des " +
+      "défis complexes, encadré et formé de nombreux collaborateurs, tout en cultivant " +
+      "un esprit d'entraide, de transmission des connaissances et de réussite collective.",
+    provisional: false,
+    photoAlt: "My Name",
   },
   scheduling: {
     heading: "Prendre rendez-vous",
@@ -278,12 +279,12 @@ const EN: Messages = {
         "that works best for you.",
     ],
   },
-  // Reassurance_Element (Requirements 14.1, 14.2, 14.3): names Laurent Oudet + Grasse
+  // Reassurance_Element (Requirements 14.1, 14.2, 14.3): names My Name + Grasse
   // (06130), states no obligation and that we contact the Visitor to confirm.
   reassurance: {
     heading: "With confidence",
     body:
-      "Behind this service there's a real person: Laurent Oudet, based in Grasse " +
+      "Behind this service there's a real person: My Name, based in Grasse " +
       "(06130) and the surrounding towns. Making a request or booking a meeting places " +
       "you under no obligation — it's free and needs no account. We'll simply get back " +
       "to you to confirm the day and time that suit you.",
@@ -364,14 +365,15 @@ const EN: Messages = {
     },
   },
   about: {
-    name: "Laurent Oudet",
-    // Provisional placeholder bio (Requirement 11.4) — English equivalent of the FR
-    // placeholder; swapped for final copy by editing this entry and flipping the flag.
+    name: "My Name",
+    // Final About biography (Requirement 11.4) — English equivalent of the FR copy.
     bio:
-      "Laurent Oudet, engineer… A fuller biography is coming soon to introduce the " +
-      "background and know-how behind this neighborhood service.",
-    provisional: true,
-    photoAlt: "Laurent Oudet",
+      "An engineer at Amadeus, I held technical and managerial responsibilities within " +
+      "international teams. I helped solve complex challenges, mentored and trained many " +
+      "colleagues, and fostered a spirit of mutual support, knowledge sharing, and " +
+      "collective success.",
+    provisional: false,
+    photoAlt: "My Name",
   },
   scheduling: {
     heading: "Book a Meeting",

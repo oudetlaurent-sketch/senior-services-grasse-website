@@ -13,7 +13,7 @@ import type {
 // Validates: the typed per-language dictionary that becomes the single source of truth
 // for every visitor-facing string (Requirements 7.1, 7.6). These tests assert both
 // Supported_Languages are present and complete, that nothing is left blank, that the
-// three services carry stable keys per language, that the About bio is provisional, and
+// three services carry stable keys per language, that the About bio is final, and
 // that the email label is the WORD "Email" in both languages (Requirement 10.3).
 
 const LANGUAGES: readonly Language[] = ["fr", "en"];
@@ -119,12 +119,12 @@ describe("localized content model (MESSAGES / getMessages)", () => {
     }
   });
 
-  it("marks the About bio as provisional in both languages", () => {
+  it("marks the About bio as final (non-provisional) in both languages", () => {
     for (const lang of LANGUAGES) {
       const about = getMessages(lang).about;
-      expect(about.name).toBe("Laurent Oudet");
+      expect(about.name).toBe("My Name");
       expect(about.bio.trim().length).toBeGreaterThan(0);
-      expect(about.provisional, `${lang}.about.provisional`).toBe(true);
+      expect(about.provisional, `${lang}.about.provisional`).toBe(false);
     }
   });
 
@@ -152,13 +152,13 @@ describe("localized content model (MESSAGES / getMessages)", () => {
     }
   });
 
-  it("provides a Reassurance_Element naming Laurent Oudet and Grasse in both languages", () => {
+  it("provides a Reassurance_Element naming My Name and Grasse in both languages", () => {
     // Validates: Requirements 14.1, 14.2, 14.3
     for (const lang of LANGUAGES) {
       const reassurance = getMessages(lang).reassurance;
       expect(reassurance.body.trim().length, `${lang}.reassurance.body`).toBeGreaterThan(0);
-      expect(reassurance.body, `${lang}.reassurance.body names Laurent Oudet`).toContain(
-        "Laurent Oudet",
+      expect(reassurance.body, `${lang}.reassurance.body names My Name`).toContain(
+        "My Name",
       );
       expect(
         reassurance.body,

@@ -26,7 +26,7 @@
  *   --color-border      #767676 on --color-bg      #ffffff  ->  4.54:1  (meets 3:1 non-text UI)
  *   --color-error       #b00020 on --color-bg      #ffffff  ->  7.33:1  (normal AAA)
  *   --color-on-error    #ffffff on --color-error   #b00020  ->  7.33:1  (normal AAA)
- *   --color-on-page     #ffffff on --color-page    #9b1c20  ->  8.14:1  (normal AAA)
+ *   --color-on-page     #1a1a1a on --color-page    #fbf0e9  -> 15.53:1  (normal AAA)
  *
  * Every text/background pair above clears the 4.5:1 normal-text threshold, and
  * the non-text UI tokens (focus indicator, control borders) clear the 3:1
@@ -80,12 +80,11 @@
   /* Color tokens — see verified contrast ratios in the header comment. */
   --color-bg: #ffffff; /* control / input / small-surface background (NOT the page mat) */
   --color-surface: #f4f6f8; /* raised surfaces (cards, footer) */
-  /* Page background mat — the City of Grasse heraldic red. Content sits on light
-     surfaces (scrim, cards, footer) over this red, so the red frames the content while
-     text stays on light panels. The page <h1> is rendered in --color-on-page (white)
-     since it sits directly on the red. Verified: #ffffff on #9b1c20 -> 8.14:1 (AAA). */
-  --color-page: #9b1c20; /* Grasse red page background */
-  --color-on-page: #ffffff; /* text that sits directly on the red page mat (e.g. the h1) */
+  /* Page background — a soft warm cream (#fbf0e9). The whole page uses this light
+     background uniformly (no dark frame). Dark text sits directly on it with ample
+     contrast. Verified: #1a1a1a on #fbf0e9 -> 15.53:1 (AAA). */
+  --color-page: #fbf0e9; /* Soft warm cream — chosen page background (light, uniform) */
+  --color-on-page: #1a1a1a; /* text on the light cream page background (e.g. the h1) */
   --color-text: #1a1a1a; /* body text */
   --color-text-muted: #595959; /* secondary text */
   --color-primary: #0b5394; /* primary brand / button background */

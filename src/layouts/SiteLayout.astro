@@ -171,7 +171,9 @@ const languageMap = {
       <p class="site-footer__name">{CONTACT_NAME}</p>
       <p class="site-footer__contact">
         <span>{footerLabels.phoneLabel} : </span>
-        <a href={`tel:${BUSINESS_PHONE_HREF}`}>{BUSINESS_PHONE}</a>
+        {BUSINESS_PHONE_HREF
+          ? <a href={`tel:${BUSINESS_PHONE_HREF}`}>{BUSINESS_PHONE}</a>
+          : <span>{BUSINESS_PHONE}</span>}
       </p>
       <p class="site-footer__contact">
         <span>{footerLabels.emailLabel} : </span>
@@ -265,16 +267,20 @@ const languageMap = {
       }
 
       .site-main {
-        padding: 1rem;
+        /* The whole page uses one soft, uniform cream background (--color-page): the main
+           content blends into it (no distinct panel, no frame). Dark text sits directly on
+           the cream with ample contrast (#1a1a1a on #fbf0e9 = 15.53:1, AAA). The column is
+           centered and width-capped for comfortable line length. */
+        color: var(--color-text, #1a1a1a);
+        padding: var(--space-lg, 1.5rem);
         max-width: 70rem;
         margin: 0 auto;
       }
 
-      /* The page title sits directly on the Grasse-red page mat, so it is rendered in the
-         on-page color (white) which clears AA against the red (8.14:1). The rest of the
-         page content lives on light surfaces (scrim, cards) and keeps its dark text. */
+      /* The page title sits on the uniform cream background; dark text for AA contrast
+         (#1a1a1a on --color-page #fbf0e9 = 15.53:1, AAA). */
       .site-main > h1 {
-        color: var(--color-on-page, #ffffff);
+        color: var(--color-text, #1a1a1a);
       }
 
       .site-footer {

@@ -20,8 +20,8 @@ describe("BUSINESS_INFO content", () => {
   });
 
   it("formats the phone in French two-digit pairs", () => {
-    // Five space-separated two-digit groups, e.g. "06 13 06 13 06".
-    expect(BUSINESS_INFO.phone).toMatch(/^\d{2}( \d{2}){4}$/);
+    // Five space-separated two-digit groups, e.g. "06 13 06 13 06", or a masked placeholder like "XX XX XX XX XX".
+    expect(BUSINESS_INFO.phone).toMatch(/^[0-9X]{2}( [0-9X]{2}){4}$/);
   });
 
   it("has a non-empty name, email, and French service-area statement", () => {
@@ -42,7 +42,7 @@ describe("phoneHref", () => {
   });
 
   it("defaults to the business phone number", () => {
-    expect(phoneHref()).toBe("+33613061306");
+    expect(phoneHref()).toBe("");
   });
 
   it("preserves an already-international number", () => {

@@ -241,7 +241,7 @@ describe("localization, Grasse location, and decorative background audit (task 1
     // name "Aide à la personne" and the phone in the French two-digit-pair convention,
     // read from the single BUSINESS_INFO source. The structured postal address was
     // removed: the site-wide contact details are phone + email only (Requirement 8.2).
-    expect(BUSINESS_INFO.phone).toMatch(/^\d{2}( \d{2}){4}$/);
+    expect(BUSINESS_INFO.phone).toMatch(/^[0-9X]{2}( [0-9X]{2}){4}$/);
 
     for (const { path, document } of pages) {
       const footer = document.querySelector("footer.site-footer");

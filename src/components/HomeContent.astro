@@ -384,7 +384,9 @@ const copy =
       {/* Business phone number and email address (Requirement 1.5). */}
       <p class="home-contact">
         <span class="home-contact__label">{FOOTER_LABELS.phoneLabel} :</span>
-        <a class="home-link" href={`tel:${BUSINESS_PHONE_HREF}`}>{BUSINESS_PHONE}</a>
+        {BUSINESS_PHONE_HREF
+          ? <a class="home-link" href={`tel:${BUSINESS_PHONE_HREF}`}>{BUSINESS_PHONE}</a>
+          : <span class="home-link">{BUSINESS_PHONE}</span>}
       </p>
       <p class="home-contact">
         <span class="home-contact__label">{FOOTER_LABELS.emailLabel} :</span>
