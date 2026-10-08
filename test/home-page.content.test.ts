@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { ensureBuiltSite } from "./support/build-site.js";
 import { BUSINESS_INFO, phoneHref } from "../src/content/business.ts";
+import { getMessages } from "../src/content/i18n.ts";
 
 /**
  * Example-based unit tests for the Home_Page (task 8.2, src/pages/index.astro),
@@ -46,7 +47,8 @@ describe("Home_Page content and error paths (task 8.2, French)", () => {
 
   it("displays the business name and a one-sentence French description (1.2, 7.1)", () => {
     // Business name appears as the page's top-level heading and the <title>.
-    expect(html).toContain(`<title>${BUSINESS_INFO.name}</title>`);
+    const frTitle = getMessages("fr").home.title;
+    expect(html).toContain(`<title>${frTitle}</title>`);
     expect(html).toMatch(
       new RegExp(`<h1[^>]*>\\s*${BUSINESS_INFO.name}\\s*<\\/h1>`),
     );

@@ -177,7 +177,7 @@ describe("bilingual, identity, About, and Scheduling audit (task 22.5)", () => {
     for (const language of SUPPORTED_LANGUAGES) {
       const nav = getMessages(language).nav;
       for (const key of NAV_ORDER) {
-        // The Home_Page h1 is the business name ("Aide à la personne") rather than the nav label.
+        // The Home_Page h1 is the localized home title (per language) rather than the nav label.
         if (key === "home") continue;
         const { file, document } = pageFor(language, key);
         const h1 = (document.querySelector("h1")?.textContent ?? "").replace(/\s+/g, " ").trim();
@@ -257,14 +257,15 @@ describe("bilingual, identity, About, and Scheduling audit (task 22.5)", () => {
     }
   });
 
-  it('the business name "Aide à la personne" appears on the Home_Page in both languages (10.1)', () => {
+  it("the Home_Page h1 is the localized home title in both languages (10.1, 7.6)", () => {
     for (const language of SUPPORTED_LANGUAGES) {
       const { file, document } = pageFor(language, "home");
       const h1 = (document.querySelector("h1")?.textContent ?? "").trim();
+      const expected = getMessages(language).home.title;
       expect(
         h1,
-        `${file}: Home_Page h1 must be the business name "Aide à la personne"`,
-      ).toBe("Aide à la personne");
+        `${file}: Home_Page h1 must be the ${language} home title "${expected}"`,
+      ).toBe(expected);
     }
   });
 

@@ -235,6 +235,8 @@ export type Messages = {
 
   // --- Page copy ---
   home: {
+    /** The Home_Page title (document <title> + page <h1>), per language. */
+    title: string;
     /** One-sentence business description (Requirement 1.2). */
     description: string;
     /** Page introduction / lead copy. */

@@ -63,6 +63,8 @@ const FR: Messages = {
       "sur toute la Riviera : Mouans-Sartoux, Pégomas, Le Tignet, Peymeinade et au-delà.",
   },
   home: {
+    // Home_Page title (tab + <h1>). The brand name is kept in French here.
+    title: "Aide à la personne",
     description:
       "Un coup de main chaleureux, à votre rythme : nous aidons les seniors à " +
       "apprivoiser leur ordinateur, à le remettre d'aplomb quand il fait des siennes, " +
@@ -249,6 +251,8 @@ const EN: Messages = {
       "Mouans-Sartoux, Pégomas, Le Tignet, Peymeinade and beyond.",
   },
   home: {
+    // Home_Page title (tab + <h1>) — English.
+    title: "Home Help",
     description:
       "A warm helping hand, at your own pace: we help seniors get comfortable with " +
       "their computer, get it back on its feet when it misbehaves, and fix the little " +

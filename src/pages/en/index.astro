@@ -10,11 +10,12 @@
  */
 import SiteLayout from "../../layouts/SiteLayout.astro";
 import HomeContent from "../../components/HomeContent.astro";
-import { BUSINESS_INFO } from "../../content/business.ts";
+import { getMessages } from "../../content/i18n.ts";
 
 const language = "en" as const;
+const messages = getMessages(language);
 ---
 
-<SiteLayout title={BUSINESS_INFO.name} currentPage="home" language={language}>
+<SiteLayout title={messages.home.title} currentPage="home" language={language}>
   <HomeContent language={language} />
 </SiteLayout>

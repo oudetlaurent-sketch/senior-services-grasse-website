@@ -141,14 +141,14 @@ describe("identity, address removal, nav contrast, and About photo audit (task 3
     }
   });
 
-  it("the full business name is the Home_Page h1 in both languages (10.1)", () => {
-    // The full business identity "Aide à la personne" is the Home_Page title/h1.
-    const expectedName = BUSINESS_INFO.name;
-    expect(expectedName).toBe("Aide à la personne");
+  it("the Home_Page h1 is the localized home title in both languages (10.1, 7.6)", () => {
+    // The Home_Page title/h1 is the per-language home title: FR keeps the brand name
+    // "Aide à la personne"; EN uses its English equivalent.
     for (const language of SUPPORTED_LANGUAGES) {
       const { file, document } = pageFor(language, "home");
       const h1 = textOf(document.querySelector("h1"));
-      expect(h1, `${file}: Home_Page h1 must be the business name`).toBe(expectedName);
+      const expected = getMessages(language).home.title;
+      expect(h1, `${file}: Home_Page h1 must be the ${language} home title`).toBe(expected);
     }
   });
 
