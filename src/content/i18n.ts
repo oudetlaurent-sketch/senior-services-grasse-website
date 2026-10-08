@@ -146,10 +146,12 @@ const FR: Messages = {
       title: "Apprentissage de l'informatique",
       description:
         "Des leçons patientes et individuelles pour vous aider à utiliser votre " +
-        "ordinateur, votre tablette ou votre téléphone en toute confiance — à votre " +
-        "rythme et avec des mots simples.",
+        "ordinateur, votre tablette ou votre smartphone en toute confiance — à votre " +
+        "rythme et avec des mots simples, y compris la prise en main des applications.",
       includes: [
-        "Premiers pas avec un ordinateur, une tablette ou un téléphone",
+        "Premiers pas avec un ordinateur, une tablette ou un smartphone",
+        "Utiliser son smartphone au quotidien : appels, SMS, réglages",
+        "Installer et utiliser des applications (messagerie, photos, banque, santé, transports)",
         "Envoyer et lire ses courriels en toute sécurité",
         "Faire des appels vidéo avec la famille et les amis",
         "Naviguer sur Internet et éviter les arnaques en ligne",
@@ -179,6 +181,7 @@ const FR: Messages = {
         "Accrocher étagères, cadres et tringles à rideaux",
         "Remplacer les luminaires et les ampoules",
         "Montage et réparation de petits meubles",
+        "Devis et installation de caméras de sécurité simples",
         "Vérifications générales de sécurité du domicile",
       ],
     },
@@ -327,10 +330,13 @@ const EN: Messages = {
     "computer-learning": {
       title: "Computer Learning",
       description:
-        "Patient, one-on-one lessons to help you use your computer, tablet, or phone " +
-        "with confidence — at your own pace and in plain words.",
+        "Patient, one-on-one lessons to help you use your computer, tablet, or " +
+        "smartphone with confidence — at your own pace and in plain words, including " +
+        "getting comfortable with apps.",
       includes: [
-        "First steps with a computer, tablet, or phone",
+        "First steps with a computer, tablet, or smartphone",
+        "Using your smartphone day to day: calls, texts, settings",
+        "Installing and using apps (messaging, photos, banking, health, transport)",
         "Sending and reading email safely",
         "Making video calls with family and friends",
         "Browsing the Internet and avoiding online scams",
@@ -360,6 +366,7 @@ const EN: Messages = {
         "Hanging shelves, frames, and curtain rails",
         "Replacing light fixtures and bulbs",
         "Assembling and repairing small furniture",
+        "Quote and installation of simple security cameras",
         "General home safety checks",
       ],
     },
