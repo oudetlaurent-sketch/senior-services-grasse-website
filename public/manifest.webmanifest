@@ -1,0 +1,32 @@
+{
+  "name": "Aide à la personne — Grasse",
+  "short_name": "Aide à la pers.",
+  "description": "Aide à la personne à Grasse : apprentissage de l'informatique, dépannage informatique et petits dépannages à domicile pour les seniors.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fbf0e9",
+  "theme_color": "#faf6ef",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

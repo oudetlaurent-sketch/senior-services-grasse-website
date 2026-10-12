@@ -1,0 +1,87 @@
+---
+/**
+ * Offline_Fallback_Page — the page the Service_Worker serves when a navigation
+ * fails and no cached copy of the requested page is available (design §PWA,
+ * Requirement 17.6, 17.11).
+ *
+ * Rendered through the shared {@link SiteLayout} so it inherits the skip link, the
+ * single `<main>`, exactly one `<h1>`, the labeled `<nav>`, and exactly one
+ * `aria-current="page"` link — satisfying the global accessibility scan and
+ * Requirements 5 and 6 unchanged. `currentPage="home"` keeps a single current nav
+ * link and makes the Home_Page the natural return target.
+ *
+ * The body is intentionally text-only (no form, no iframe, no external assets) so it
+ * is fully usable offline. It presents a short message in BOTH Supported_Languages,
+ * French first (Requirement 17.11), and reuses the single BUSINESS_INFO source for the
+ * phone and email, exactly as the footer does.
+ */
+import SiteLayout from "../layouts/SiteLayout.astro";
+import { BUSINESS_INFO, phoneHref } from "../content/business.ts";
+
+const language = "fr" as const;
+const pageTitle = "Vous êtes hors ligne";
+
+const phone = BUSINESS_INFO.phone;
+const phoneTel = phoneHref();
+const email = BUSINESS_INFO.email;
+---
+
+<SiteLayout title={pageTitle} currentPage="home" language={language}>
+  <section class="offline" aria-labelledby="offline-fr">
+    <h2 id="offline-fr">Pas de connexion Internet</h2>
+    <p>
+      Cette page n'est pas disponible hors ligne. Vérifiez votre connexion, puis
+      réessayez. Vous pouvez aussi revenir à la page d'accueil, qui reste
+      consultable hors ligne.
+    </p>
+    <p>
+      <a class="offline__home" href="/">Retour à l'accueil</a>
+    </p>
+    <p class="offline__contact">
+      Besoin d'aide tout de suite ? Appelez le
+      {phoneTel ? <a href={`tel:${phoneTel}`}>{phone}</a> : <span>{phone}</span>}
+      ou écrivez à <a href={`mailto:${email}`}>{email}</a>.
+    </p>
+  </section>
+
+  <section class="offline" aria-labelledby="offline-en" lang="en">
+    <h2 id="offline-en">No internet connection</h2>
+    <p>
+      This page is not available offline. Check your connection and try again. You
+      can also return to the home page, which stays available offline.
+    </p>
+    <p>
+      <a class="offline__home" href="/en/">Back to home</a>
+    </p>
+    <p class="offline__contact">
+      Need help right now? Call
+      {phoneTel ? <a href={`tel:${phoneTel}`}>{phone}</a> : <span>{phone}</span>}
+      or email <a href={`mailto:${email}`}>{email}</a>.
+    </p>
+  </section>
+</SiteLayout>
+
+<style>
+  /* Senior-friendly readability on the shared cream surface (Requirements 5, 6):
+     body text inherits the >=18px base from base.css; dark text on cream clears
+     AA by a wide margin. Links keep the 44x44 target size and spacing. */
+  .offline {
+    margin: 0 0 var(--space-lg, 1.5rem);
+  }
+
+  .offline p {
+    max-width: 60ch;
+  }
+
+  .offline a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--target-min, 44px);
+    color: var(--color-link, #0b5394);
+  }
+
+  .offline a:focus-visible {
+    outline: 3px solid var(--color-focus, #b45309);
+    outline-offset: 2px;
+  }
+</style>

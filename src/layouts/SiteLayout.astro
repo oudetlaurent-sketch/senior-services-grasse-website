@@ -100,6 +100,20 @@ const languageMap = {
     <link rel="alternate" hreflang="en" href={alternateByLanguage.en} />
     <link rel="alternate" hreflang="x-default" href={alternateByLanguage.fr} />
     <!--
+      Progressive Web App (PWA) metadata (design §PWA, Requirement 17.1, 17.3, 17.4).
+      These are static, inert tags rendered on every page via the shared layout:
+      - the Web_App_Manifest makes the site installable with display: standalone;
+      - the theme-color matches the warm off-white top chrome (--scrim-surface);
+      - the Apple meta tags + apple-touch-icon let iOS add the site to the Home
+        Screen and launch it full-screen as a standalone app.
+    -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#faf6ef" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Aide à la personne" />
+    <!--
       Language persistence — progressive enhancement (Requirement 7.5).
 
       This runs as early as possible (before paint) so a returning Visitor whose remembered
@@ -222,6 +236,25 @@ const languageMap = {
           /* No-JS/failure path: the selector links navigate on their own. */
         }
       })();
+    </script>
+
+    <!--
+      Service_Worker registration — progressive enhancement (design §PWA,
+      Requirement 17.12). Registers /sw.js at root scope only when the browser
+      supports service workers, after `load`, with a swallowed error. With
+      JavaScript disabled or no SW support, nothing runs and the normal online
+      site is unaffected; only supporting browsers gain install + offline.
+    -->
+    <script is:inline>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+          navigator.serviceWorker
+            .register("/sw.js", { scope: "/" })
+            .catch(function () {
+              /* registration failure is non-fatal: the online site works as-is */
+            });
+        });
+      }
     </script>
 
     <style>
