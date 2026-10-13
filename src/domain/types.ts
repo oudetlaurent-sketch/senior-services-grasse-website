@@ -304,6 +304,36 @@ export type Messages = {
     /** At least three Q&A pairs; both `question` and `answer` are non-empty (Requirement 15.1). */
     items: Array<{ question: string; answer: string }>;
   };
+  /**
+   * Testimonials section copy in this language (design §2e, Requirement 18). Rendered on
+   * the Home_Page as an `<h2>` section placed BETWEEN the Reassurance_Element and the
+   * FAQ_Section (Requirement 18.1). The content is curated, owner-managed, provisional
+   * placeholder copy — NOT visitor-submitted — maintained here per Supported_Language
+   * like the FAQ and About copy (Requirements 18.6, 18.7, 18.8).
+   *
+   * - `heading` is the section `<h2>` text ("Ce qu'en disent nos clients" / "What our
+   *   customers say").
+   * - `provisionalNote` is the per-language banner marking the testimonials as provisional
+   *   placeholder content (Requirement 18.7).
+   * - `aggregate.ratingLabel` is the per-language unit/label the component uses to render
+   *   the Aggregate_Rating (the average of `items[].rating`, to one decimal, with the
+   *   count — e.g. "4,8 / 5 — 3 avis" / "4.8 / 5 — 3 reviews"); the component composes the
+   *   final string and formats the number per language (Requirement 18.3).
+   * - `items` are the >=3 curated Testimonials, each with an attributed `author`, a 1–5
+   *   integer `rating` (its {@link Star_Rating}), a `quote`, and an optional `serviceLabel`
+   *   tying the testimonial to a service (Requirements 18.2, 18.4).
+   */
+  testimonials: {
+    heading: string;
+    provisionalNote: string;
+    aggregate: { ratingLabel: string };
+    items: Array<{
+      author: string;
+      rating: 1 | 2 | 3 | 4 | 5;
+      quote: string;
+      serviceLabel?: string;
+    }>;
+  };
   /** Per-service title/description/includes in this language (Requirement 7.6). */
   services: Record<ServiceKey, ServiceContent>;
   /** About_Page name + (provisional) bio in this language (Requirement 11). */

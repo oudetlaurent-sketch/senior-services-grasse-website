@@ -143,6 +143,52 @@ const FR: Messages = {
       },
     ],
   },
+  // Testimonials section (Requirements 18.2, 18.6, 18.7). Three REAL testimonials
+  // supplied by the business owner, each verbatim in French. They are all 5/5, so the
+  // aggregate (computed from items in the component) is exactly 5 / 5 over 3 avis. The
+  // provisionalNote is scoped ONLY to the attribution: the quotes are genuine, but the
+  // reviewer names will be added later — it does NOT imply the quotes are placeholders.
+  // The authors are neutral attributions (no real PII) pending the real names.
+  testimonials: {
+    heading: "Avis de nos clients",
+    provisionalNote:
+      "Avis authentiques de personnes que nous avons accompagnées. Les noms seront " +
+      "ajoutés prochainement, avec leur accord.",
+    // Counted-noun suffix for the Aggregate_Rating line: "5 / 5 — 3 avis".
+    aggregate: { ratingLabel: "avis" },
+    items: [
+      {
+        author: "Cliente — Grasse",
+        rating: 5,
+        quote:
+          "Ponctualité, communication, intervention technique sans problème, contact sympathique !",
+      },
+      {
+        author: "Cliente — Grasse",
+        rating: 5,
+        serviceLabel: "Dépannage informatique",
+        quote:
+          "Un grand merci pour votre aide et votre patience ! Mon ordinateur était devenu " +
+          "très lent et je ne comprenais plus certains messages qui s'affichaient. Tout a " +
+          "été expliqué avec des mots simples, sans jargon informatique, ce qui m'a beaucoup " +
+          "rassuré. L'intervenant a pris le temps de répondre à toutes mes questions, de " +
+          "sécuriser mon ordinateur et de m'expliquer comment utiliser ma messagerie et mes " +
+          "photos. Très professionnel, ponctuel et surtout très à l'écoute des personnes " +
+          "âgées. Je recommande vivement ce service à tous les seniors qui ont besoin d'une " +
+          "assistance informatique de confiance. Cela fait vraiment plaisir de rencontrer " +
+          "quelqu'un d'aussi compétent et bienveillant !",
+      },
+      {
+        author: "Client — Grasse",
+        rating: 5,
+        serviceLabel: "Dépannage informatique",
+        quote:
+          "Intervention rapide, efficace et réalisée avec beaucoup de gentillesse. Toutes " +
+          "mes difficultés informatiques ont été résolues et les explications étaient très " +
+          "claires. Je recommande sans hésiter !",
+      },
+    ],
+  },
   services: {
     "computer-learning": {
       title: "Apprentissage de l'informatique",
@@ -327,6 +373,51 @@ const EN: Messages = {
         answer:
           "Not at all. We explain everything in plain words, at your own pace, and " +
           "without complicated jargon. There's no such thing as a silly question.",
+      },
+    ],
+  },
+  // Testimonials section (Requirements 18.2, 18.6, 18.7) — faithful, warm English
+  // translations of the three REAL French testimonials. The star ratings are identical
+  // to the FR set (all 5/5), so the Aggregate_Rating matches across languages — exactly
+  // 5 / 5 over 3 reviews. The provisionalNote is scoped ONLY to the attribution: the
+  // quotes are genuine; the reviewer names will be added later. Authors are neutral
+  // attributions (no real PII) pending the real names.
+  testimonials: {
+    heading: "What our clients say",
+    provisionalNote:
+      "Genuine reviews from people we have helped. Names will be added soon, with their " +
+      "consent.",
+    // Counted-noun suffix for the Aggregate_Rating line: "5 / 5 — 3 reviews".
+    aggregate: { ratingLabel: "reviews" },
+    items: [
+      {
+        author: "Client — Grasse",
+        rating: 5,
+        quote:
+          "Punctual, great communication, a smooth technical visit, and a friendly contact!",
+      },
+      {
+        author: "Client — Grasse",
+        rating: 5,
+        serviceLabel: "Computer Repair",
+        quote:
+          "A big thank you for your help and your patience! My computer had become very " +
+          "slow and I no longer understood some of the messages popping up. Everything was " +
+          "explained in plain words, with no computer jargon, which reassured me a great " +
+          "deal. He took the time to answer all my questions, to secure my computer, and to " +
+          "show me how to use my email and my photos. Very professional, punctual, and above " +
+          "all a great listener with older people. I warmly recommend this service to any " +
+          "senior who needs computer help they can trust. It's a real pleasure to meet " +
+          "someone so skilled and kind!",
+      },
+      {
+        author: "Client — Grasse",
+        rating: 5,
+        serviceLabel: "Computer Repair",
+        quote:
+          "A fast, effective visit carried out with great kindness. All my computer troubles " +
+          "were resolved and the explanations were very clear. I recommend without " +
+          "hesitation!",
       },
     ],
   },

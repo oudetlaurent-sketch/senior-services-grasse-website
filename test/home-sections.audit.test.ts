@@ -7,6 +7,7 @@ import { ensureBuiltSite } from "./support/build-site.js";
 import { getMessages } from "../src/content/i18n.js";
 import { pagePath } from "../src/domain/navigation.js";
 import { isValidHeadingStructure } from "../src/domain/headings.js";
+import { aggregateRating } from "../src/domain/testimonials.js";
 import type { Language } from "../src/domain/types.js";
 
 /**
@@ -329,6 +330,148 @@ describe("Home_Page How It Works, Reassurance, and FAQ audit (task 27.1)", () =>
           ).toBe(true);
         }
       }
+    }
+  });
+});
+
+describe("Home_Page Testimonials section audit (Requirement 18)", () => {
+  beforeAll(() => {
+    ensureBuiltSite();
+    for (const language of SUPPORTED_LANGUAGES) {
+      homePage(language);
+    }
+  }, 190_000);
+
+  /** The ordered list of labelled home sections, by their heading id. */
+  function sectionOrder(document: Document): string[] {
+    return Array.from(document.querySelectorAll("section.home-section"))
+      .map((s) => s.getAttribute("aria-labelledby") ?? "")
+      .filter((id) => id.length > 0);
+  }
+
+  it("renders a Testimonials section with its h2 in both languages (18.1, 18.6)", () => {
+    for (const language of SUPPORTED_LANGUAGES) {
+      const { file, document } = homePage(language);
+      const section = sectionByHeadingId(document, "home-testimonials-heading");
+      expect(section, `${file}: expected the Testimonials section`).not.toBeNull();
+      const h2 = section!.querySelector("h2#home-testimonials-heading");
+      expect(h2, `${file}: Testimonials heading must be an <h2>`).not.toBeNull();
+      expect(textOf(h2)).toBe(getMessages(language).testimonials.heading);
+    }
+  });
+
+  it("places Testimonials AFTER Reassurance and BEFORE FAQ in both languages (18.1)", () => {
+    for (const language of SUPPORTED_LANGUAGES) {
+      const { file, document } = homePage(language);
+      const order = sectionOrder(document);
+      const reassurance = order.indexOf("home-reassurance-heading");
+      const testimonials = order.indexOf("home-testimonials-heading");
+      const faq = order.indexOf("home-faq-heading");
+      expect(reassurance, `${file}: Reassurance section present`).toBeGreaterThanOrEqual(0);
+      expect(testimonials, `${file}: Testimonials section present`).toBeGreaterThanOrEqual(0);
+      expect(faq, `${file}: FAQ section present`).toBeGreaterThanOrEqual(0);
+      expect(
+        reassurance < testimonials && testimonials < faq,
+        `${file}: order must be Reassurance(${reassurance}) < Testimonials(${testimonials}) < FAQ(${faq})`,
+      ).toBe(true);
+    }
+  });
+
+  it("shows >=3 testimonials, each with an accessible rating text equivalent (18.2, 18.4)", () => {
+    for (const language of SUPPORTED_LANGUAGES) {
+      const { file, document } = homePage(language);
+      const section = sectionByHeadingId(document, "home-testimonials-heading");
+      const items = Array.from(section!.querySelectorAll("li.home-testimonials__item"));
+      expect(items.length, `${file}: >=3 testimonials`).toBeGreaterThanOrEqual(3);
+      expect(items.length, `${file}: item count matches content model`).toBe(
+        getMessages(language).testimonials.items.length,
+      );
+
+      // Each testimonial exposes a text equivalent for its rating ("sur 5" / "out of 5").
+      const needle = language === "fr" ? /sur 5/i : /out of 5/i;
+      for (const item of items) {
+        // Author is an <h3> (no skipped heading level).
+        expect(item.querySelector("h3"), `${file}: author must be an <h3>`).not.toBeNull();
+        const hidden = item.querySelector(".visually-hidden");
+        const ariaLabel = item.querySelector("[aria-label]");
+        const textEquivalent = textOf(hidden) || (ariaLabel?.getAttribute("aria-label") ?? "");
+        expect(
+          needle.test(textEquivalent),
+          `${file}: each rating needs a text equivalent, saw "${textEquivalent}"`,
+        ).toBe(true);
+        // Decorative glyphs are aria-hidden.
+        const glyphs = item.querySelector(".home-testimonials__stars");
+        expect(
+          glyphs?.getAttribute("aria-hidden"),
+          `${file}: star glyphs must be aria-hidden`,
+        ).toBe("true");
+      }
+    }
+  });
+
+  it("renders the Aggregate_Rating matching the helper over the content model (18.3, 18.5)", () => {
+    for (const language of SUPPORTED_LANGUAGES) {
+      const { file, document } = homePage(language);
+      const section = sectionByHeadingId(document, "home-testimonials-heading");
+      const items = getMessages(language).testimonials.items;
+      const { average, count } = aggregateRating(items.map((i) => i.rating));
+
+      const averageText = average.toLocaleString(language === "fr" ? "fr-FR" : "en-US", {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      });
+
+      const aggregateText = textOf(section!.querySelector(".home-testimonials__aggregate-text"));
+      expect(
+        aggregateText,
+        `${file}: aggregate must show the one-decimal average`,
+      ).toContain(averageText);
+      expect(aggregateText, `${file}: aggregate must show the count`).toContain(String(count));
+      // FR comma decimal / EN dot decimal.
+      if (language === "fr" && !Number.isInteger(average)) {
+        expect(averageText, "FR uses a comma decimal").toContain(",");
+      }
+      if (language === "en" && !Number.isInteger(average)) {
+        expect(averageText, "EN uses a dot decimal").toContain(".");
+      }
+    }
+  });
+
+  it("emits valid JSON-LD whose ratings match the visible aggregate (18.10)", () => {
+    for (const language of SUPPORTED_LANGUAGES) {
+      const { file, document } = homePage(language);
+      const section = sectionByHeadingId(document, "home-testimonials-heading");
+      const script = section!.querySelector('script[type="application/ld+json"]');
+      expect(script, `${file}: Testimonials JSON-LD must be present`).not.toBeNull();
+
+      const data = JSON.parse(script!.textContent ?? "{}");
+      const items = getMessages(language).testimonials.items;
+      const { average, count } = aggregateRating(items.map((i) => i.rating));
+
+      expect(data.aggregateRating?.["@type"]).toBe("AggregateRating");
+      expect(data.aggregateRating?.reviewCount, `${file}: reviewCount`).toBe(count);
+      expect(data.aggregateRating?.ratingValue, `${file}: ratingValue`).toBe(average);
+
+      expect(Array.isArray(data.review), `${file}: review array`).toBe(true);
+      expect(data.review.length, `${file}: one review per testimonial`).toBe(items.length);
+      data.review.forEach((review: { reviewRating?: { ratingValue?: number } }, i: number) => {
+        expect(
+          review.reviewRating?.ratingValue,
+          `${file}: review ${i} ratingValue matches the item`,
+        ).toBe(items[i]!.rating);
+      });
+    }
+  });
+
+  it("keeps exactly one h1 and valid heading order with the Testimonials section (18.9)", () => {
+    for (const language of SUPPORTED_LANGUAGES) {
+      const { file, document } = homePage(language);
+      const levels = headingLevels(document);
+      expect(levels.filter((l) => l === 1).length, `${file}: exactly one h1`).toBe(1);
+      expect(
+        isValidHeadingStructure(levels),
+        `${file}: heading levels [${levels.join(", ")}] must be valid`,
+      ).toBe(true);
     }
   });
 });

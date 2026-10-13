@@ -29,6 +29,7 @@ import {
 import { SERVICE_KEYS } from "../content/services.ts";
 import { getMessages } from "../content/i18n.ts";
 import { BUSINESS_INFO, phoneHref } from "../content/business.ts";
+import { aggregateRating } from "../domain/testimonials.ts";
 import type { Language } from "../domain/types.ts";
 
 interface Props {
@@ -100,6 +101,87 @@ const faqItems = FAQ.items.map((item, index) => ({
   id: `home-faq-${index}`,
   withActions: FAQ_ACTION_PATTERN.test(item.answer),
 }));
+
+// Testimonials section copy for the active language (Requirement 18), read from the
+// localized content model. Curated, owner-managed, provisional placeholder content —
+// not visitor-submitted.
+const TESTIMONIALS = messages.testimonials;
+
+// Aggregate_Rating: the mean of the shown Star_Ratings (to one decimal) and the count,
+// computed by the pure helper from the SAME items that render below and feed the JSON-LD,
+// so the visible aggregate, each star rating, and the structured data always match
+// (Requirements 18.3, 18.10). The number is formatted per language (FR comma decimal,
+// EN dot decimal) — the helper itself stays locale-free.
+const TESTIMONIALS_AGGREGATE = aggregateRating(
+  TESTIMONIALS.items.map((item) => item.rating),
+);
+const MAX_STARS = 5;
+// Localized decimal formatting: FR uses a comma, EN a dot. toLocaleString keeps exactly
+// one fraction digit so "4.7" renders as "4,7" (fr) / "4.7" (en).
+const aggregateAverageText = TESTIMONIALS_AGGREGATE.average.toLocaleString(
+  language === "fr" ? "fr-FR" : "en-US",
+  { minimumFractionDigits: 1, maximumFractionDigits: 1 },
+);
+// Visible Aggregate_Rating line, e.g. "4,7 / 5 — 3 avis" / "4.7 / 5 — 3 reviews".
+const aggregateText =
+  `${aggregateAverageText} / ${MAX_STARS} — ` +
+  `${TESTIMONIALS_AGGREGATE.count} ${TESTIMONIALS.aggregate.ratingLabel}`;
+
+// Build the >=1..5 star glyph list for a rating and its accessible text equivalent.
+// Filled (★) vs empty (☆) stars are distinguishable by SHAPE, not color alone
+// (Requirement 18.4); the glyphs are decorative (aria-hidden) and the text equivalent is
+// exposed via a visually-hidden span.
+function starGlyphs(rating: number): string[] {
+  return Array.from({ length: MAX_STARS }, (_, i) => (i < rating ? "★" : "☆"));
+}
+const ratingTextEquivalent =
+  language === "fr"
+    ? (rating: number) => `Note : ${rating} étoiles sur ${MAX_STARS}`
+    : (rating: number) => `Rated ${rating} out of ${MAX_STARS} stars`;
+
+const testimonialItems = TESTIMONIALS.items.map((item, index) => ({
+  ...item,
+  id: `home-testimonial-${index}`,
+  glyphs: starGlyphs(item.rating),
+  ratingText: ratingTextEquivalent(item.rating),
+}));
+
+// Accessible text equivalent for the Aggregate_Rating stars (the visible number is also
+// plain text, so it is announced regardless — Requirement 18.5).
+const aggregateGlyphs = starGlyphs(Math.round(TESTIMONIALS_AGGREGATE.average));
+const aggregateRatingText =
+  language === "fr"
+    ? `Note moyenne : ${aggregateAverageText} étoiles sur ${MAX_STARS}, ` +
+      `${TESTIMONIALS_AGGREGATE.count} ${TESTIMONIALS.aggregate.ratingLabel}`
+    : `Average rating: ${aggregateAverageText} out of ${MAX_STARS} stars, ` +
+      `${TESTIMONIALS_AGGREGATE.count} ${TESTIMONIALS.aggregate.ratingLabel}`;
+
+// schema.org Review + AggregateRating structured data (Requirement 18.10). Derived from
+// the SAME items/aggregate as the visible section, so ratingValue/reviewCount match the
+// visible ratings. This is the only JSON-LD on the site; emitted once below.
+const testimonialsJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  name: BUSINESS_INFO.name,
+  aggregateRating: {
+    "@type": "AggregateRating",
+    ratingValue: TESTIMONIALS_AGGREGATE.average,
+    reviewCount: TESTIMONIALS_AGGREGATE.count,
+    bestRating: MAX_STARS,
+    worstRating: 1,
+  },
+  review: TESTIMONIALS.items.map((item) => ({
+    "@type": "Review",
+    author: { "@type": "Person", name: item.author },
+    reviewRating: {
+      "@type": "Rating",
+      ratingValue: item.rating,
+      bestRating: MAX_STARS,
+      worstRating: 1,
+    },
+    reviewBody: item.quote,
+  })),
+};
 
 // Localized microcopy for the error regions and link text.
 const copy =
@@ -312,6 +394,72 @@ const copy =
     <section class="home-section" aria-labelledby="home-reassurance-heading">
       <h2 id="home-reassurance-heading">{REASSURANCE.heading}</h2>
       <p class="home-reassurance__body">{REASSURANCE.body}</p>
+    </section>
+
+    {/*
+      Testimonials section (Requirement 18). Curated, owner-managed, PROVISIONAL
+      placeholder content from the localized content model — NOT visitor-submitted, with
+      no form, account, moderation, or endpoint (Requirement 18.8). Placed BETWEEN the
+      Reassurance_Element and the FAQ_Section so the Visual_Template order is
+      Hero → Services → How_It_Works → Reassurance → Testimonials → FAQ (Requirement 18.1).
+
+      - The section heading is an <h2> and each testimonial's author is an <h3>, so the
+        single <h1> holds and heading levels never skip (Requirement 18.9).
+      - The Aggregate_Rating and each Star_Rating expose a TEXT equivalent (visually-hidden
+        span) and are not conveyed by color alone; the glyphs (★ filled / ☆ empty) differ
+        by SHAPE and are aria-hidden decorative (Requirements 18.3, 18.4, 18.5).
+      - The schema.org Review + AggregateRating JSON-LD below is built from the same items,
+        so structured ratings match the visible ones (Requirement 18.10).
+    */}
+    <section class="home-section" aria-labelledby="home-testimonials-heading">
+      <h2 id="home-testimonials-heading">{TESTIMONIALS.heading}</h2>
+
+      {/* Provisional placeholder notice, in-language (Requirement 18.7). */}
+      <p class="home-testimonials__provisional">{TESTIMONIALS.provisionalNote}</p>
+
+      {/* Aggregate_Rating at the top of the section (Requirements 18.3, 18.5). The
+          number/count is plain visible text (announced as text); the glyphs are
+          decorative and a visually-hidden span carries the full accessible phrasing. */}
+      <p class="home-testimonials__aggregate">
+        <span class="home-testimonials__stars" aria-hidden="true">
+          {aggregateGlyphs.map((glyph) => <span class="home-testimonials__star">{glyph}</span>)}
+        </span>
+        <span class="home-testimonials__aggregate-text">{aggregateText}</span>
+        <span class="visually-hidden">{aggregateRatingText}</span>
+      </p>
+
+      <ul class="home-testimonials">
+        {
+          testimonialItems.map((item) => (
+            <li class="home-testimonials__item">
+              <blockquote class="home-testimonials__quote">
+                <p>{item.quote}</p>
+              </blockquote>
+              <h3 class="home-testimonials__author">{item.author}</h3>
+              {item.serviceLabel && (
+                <p class="home-testimonials__service">{item.serviceLabel}</p>
+              )}
+              {/* Star_Rating: decorative glyphs (aria-hidden) + visually-hidden text
+                  equivalent so assistive tech announces the rating (Requirement 18.4). */}
+              <p class="home-testimonials__rating">
+                <span class="home-testimonials__stars" aria-hidden="true">
+                  {item.glyphs.map((glyph) => (
+                    <span class="home-testimonials__star">{glyph}</span>
+                  ))}
+                </span>
+                <span class="visually-hidden">{item.ratingText}</span>
+              </p>
+            </li>
+          ))
+        }
+      </ul>
+
+      {/* schema.org Review + AggregateRating (Requirement 18.10). Values derive from the
+          same content-model items as the visible ratings, so they match. */}
+      <script
+        type="application/ld+json"
+        set:html={JSON.stringify(testimonialsJsonLd)}
+      />
     </section>
 
     {/*
@@ -717,6 +865,101 @@ const copy =
     margin: 0;
     max-width: 60ch;
     line-height: var(--line-height-body, 1.6);
+  }
+
+  /*
+   * Testimonials section (Requirement 18). Curated owner-managed quotes with star
+   * ratings on the cream page surface. Uses existing tokens only (no hard-coded colors):
+   * the cards sit on --color-surface with --color-border, matching the Service_Cards and
+   * FAQ cards. The grid reflows (auto-fit/minmax) to one column at narrow widths and at
+   * 200% zoom with no horizontal scroll (Requirements 18.4, 5.3).
+   */
+
+  /* Visually-hidden text equivalents for the star ratings (no shared utility exists):
+     removed from view but kept in the accessibility tree (Requirement 18.4). */
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .home-testimonials__provisional {
+    margin: 0 0 var(--space-md, 1rem);
+    max-width: 60ch;
+    font-style: italic;
+    line-height: var(--line-height-body, 1.6);
+  }
+
+  .home-testimonials__aggregate {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs, 0.5rem);
+    margin: 0 0 var(--space-lg, 1.5rem);
+    font-size: var(--font-size-h3, 1.5rem);
+    font-weight: 700;
+    line-height: var(--line-height-body, 1.6);
+  }
+
+  .home-testimonials {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: var(--space-lg, 1.5rem);
+  }
+
+  .home-testimonials__item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs, 0.5rem);
+    padding: var(--space-md, 1rem);
+    background: var(--color-surface, #f4f6f8);
+    border: 1px solid var(--color-border, #767676);
+    border-radius: var(--radius, 0.375rem);
+  }
+
+  .home-testimonials__quote {
+    margin: 0;
+  }
+
+  .home-testimonials__quote p {
+    margin: 0;
+    line-height: var(--line-height-body, 1.6);
+  }
+
+  .home-testimonials__author {
+    margin: var(--space-xs, 0.5rem) 0 0;
+    font-size: var(--font-size-h3, 1.5rem);
+  }
+
+  .home-testimonials__service {
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .home-testimonials__rating {
+    margin: var(--space-xs, 0.5rem) 0 0;
+  }
+
+  /* Star glyphs: a token-based accent color meeting >=4.5:1 against the card surface.
+     Filled ★ vs empty ☆ differ by SHAPE (not color), so the rating is never conveyed by
+     color alone (Requirement 18.4). The glyphs are aria-hidden; the real rating is the
+     visually-hidden text equivalent. em sizing keeps them scaling at 200% zoom. */
+  .home-testimonials__stars {
+    display: inline-flex;
+    gap: 0.1em;
+    font-size: 1.25em;
+    line-height: 1;
+    color: var(--color-text, #1a1a1a);
   }
 
   /* FAQ_Section (Requirement 15). */

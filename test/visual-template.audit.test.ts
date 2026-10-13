@@ -340,12 +340,21 @@ describe("Home_Page visual landing template audit (task 35.1)", () => {
     }
   });
 
-  it("no marketplace vocabulary appears as visible Home_Page text, except known negating FAQ phrases (16.8)", () => {
-    // Marketplace vocabulary that must not appear as a mechanic in the visible <main> text.
-    // The FAQ reassures seniors with phrases like "sans compte"/"no account" and "sans
-    // engagement"/"no obligation"; those negating contexts are tolerated.
+  it("no visitor-submission marketplace vocabulary appears as visible Home_Page text, except known negating FAQ phrases (16.8)", () => {
+    // Visitor-submission / account / payment vocabulary that must not appear as a mechanic
+    // in the visible <main> text. The FAQ reassures seniors with phrases like "sans
+    // compte"/"no account" and "sans engagement"/"no obligation"; those negating contexts
+    // are tolerated.
+    //
+    // NOTE (Requirement 18): the curated, owner-managed Testimonials section legitimately
+    // shows star/rating/avis vocabulary as EDITORIAL content (not a visitor-facing review
+    // mechanism). So rating/review/avis/note are NOT forbidden here — only visitor
+    // submission (sign up / register / post a review), accounts, and payment are. The
+    // "visitors cannot submit reviews" guarantee is enforced structurally by the controls
+    // test below (no password inputs, no login/signup links) and by the content model
+    // carrying no submission form.
     const MARKETPLACE =
-      /\b(account|compte|login|log\s*in|sign\s*up|signup|register|checkout|payment|paiement|payer|quote|devis|rating|review|avis|note|se\s+connecter)\b/i;
+      /\b(account|compte|login|log\s*in|sign\s*up|signup|register|s'inscrire|inscription|checkout|payment|paiement|payer|quote|devis|se\s+connecter)\b/i;
 
     for (const language of SUPPORTED_LANGUAGES) {
       const { file, document } = homePage(language);
