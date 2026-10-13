@@ -59,6 +59,13 @@ const copy =
           "Merci de réessayer un peu plus tard, ou d'utiliser le menu ci-dessus pour " +
           "découvrir d'autres services ou nous contacter grâce au numéro de téléphone " +
           "et à l'adresse e-mail en bas de cette page.",
+        pricingHeading: "Combien ça coûte ?",
+        pricingBody:
+          "Nos services sont facturés à partir de 25 €/h. En tant que services à la " +
+          "personne, ils ouvrent droit à un crédit d'impôt de 50 %, soit environ " +
+          "12,50 €/h après déduction.",
+        pricingReassurance: "Devis gratuit et sans engagement.",
+        pricingCtaLabel: "Demander un devis gratuit",
       }
     : {
         includesHeading: "What this service includes",
@@ -68,6 +75,13 @@ const copy =
           "We couldn't load the details of this service right now. Please try again a " +
           "little later, or use the menu above to explore other services or reach us " +
           "with the phone number and email address at the bottom of this page.",
+        pricingHeading: "How much does it cost?",
+        pricingBody:
+          "Our services start at €25/hr. As personal services " +
+          "(\"services à la personne\"), they qualify for a 50% tax credit, which " +
+          "works out to about €12.50/hr after the credit.",
+        pricingReassurance: "Free quote, with no obligation.",
+        pricingCtaLabel: "Request a free quote",
       };
 ---
 
@@ -98,6 +112,15 @@ const copy =
           </ul>
         </section>
 
+        <section class="service__pricing" aria-labelledby="pricing-heading">
+          <h2 id="pricing-heading">{copy.pricingHeading}</h2>
+          <p>{copy.pricingBody}</p>
+          <p>{copy.pricingReassurance}</p>
+          <p class="service__pricing-cta">
+            <a class="button" href={formLink}>{copy.pricingCtaLabel}</a>
+          </p>
+        </section>
+
         <p class="service__cta">
           <a class="button" href={formLink}>
             {copy.requestPrefix}
@@ -123,6 +146,21 @@ const copy =
 
   .service__includes ul {
     max-width: 60ch;
+  }
+
+  .service__pricing {
+    margin-top: var(--space-lg, 1.5rem);
+    padding: var(--space-md, 1rem);
+    background-color: var(--color-surface, #f4f6f8);
+    border-radius: var(--radius, 0.375rem);
+  }
+
+  .service__pricing p {
+    max-width: 60ch;
+  }
+
+  .service__pricing-cta {
+    margin-top: var(--space-md, 1rem);
   }
 
   .service__cta {
