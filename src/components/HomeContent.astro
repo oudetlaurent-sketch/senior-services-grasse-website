@@ -959,7 +959,10 @@ const copy =
     gap: 0.1em;
     font-size: 1.25em;
     line-height: 1;
-    color: var(--color-text, #1a1a1a);
+    /* Yellow/amber stars. Accessibility does NOT rely on this color: filled ★ vs
+       empty ☆ differ by SHAPE and the real rating is the visually-hidden text
+       equivalent (Requirement 18.4), so the color is purely visual flourish. */
+    color: #f5a623;
   }
 
   /* FAQ_Section (Requirement 15). */
