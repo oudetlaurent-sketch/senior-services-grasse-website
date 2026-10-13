@@ -65,7 +65,6 @@ const copy =
           "personne, ils ouvrent droit à un crédit d'impôt de 50 %, soit environ " +
           "12,50 €/h après déduction.",
         pricingReassurance: "Devis gratuit et sans engagement.",
-        pricingCtaLabel: "Demander un devis gratuit",
       }
     : {
         includesHeading: "What this service includes",
@@ -81,7 +80,6 @@ const copy =
           "(\"services à la personne\"), they qualify for a 50% tax credit, which " +
           "works out to about €12.50/hr after the credit.",
         pricingReassurance: "Free quote, with no obligation.",
-        pricingCtaLabel: "Request a free quote",
       };
 ---
 
@@ -116,9 +114,6 @@ const copy =
           <h2 id="pricing-heading">{copy.pricingHeading}</h2>
           <p>{copy.pricingBody}</p>
           <p>{copy.pricingReassurance}</p>
-          <p class="service__pricing-cta">
-            <a class="button" href={formLink}>{copy.pricingCtaLabel}</a>
-          </p>
         </section>
 
         <p class="service__cta">
@@ -157,10 +152,6 @@ const copy =
 
   .service__pricing p {
     max-width: 60ch;
-  }
-
-  .service__pricing-cta {
-    margin-top: var(--space-md, 1rem);
   }
 
   .service__cta {
