@@ -187,8 +187,10 @@ describe("end-to-end notification reaches the business address within budget (Re
     // ...exactly one notification was produced, addressed to the business address.
     expect(sent).toHaveLength(1);
     expect(sent[0].to).toBe(BUSINESS_TO);
-    // The message carries request detail so the business can act on it.
-    expect(sent[0].subject).toContain("service request");
+    // The message carries request detail so the business can act on it. The subject is
+    // in French and leads with the business name (Requirement: French notification email).
+    expect(sent[0].subject).toContain("Aide à la personne");
+    expect(sent[0].subject).toContain("Nouvelle demande de service");
     expect(sent[0].body).toContain(validInput.name);
     expect(sent[0].body).toContain(validInput.phone);
 

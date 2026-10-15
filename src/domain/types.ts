@@ -141,7 +141,7 @@ export type ServiceRequest = ServiceRequestInput & {
 /** The email built from a {@link ServiceRequest} and handed to the transport. */
 export type NotificationEmail = {
   to: string; // business email address
-  subject: string; // e.g. "New service request: <service title>"
+  subject: string; // e.g. "Aide à la personne — Nouvelle demande de service : <service title>"
   body: string; // request details: name, phone, email, service, description, id, createdAt
 };
 

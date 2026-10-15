@@ -183,23 +183,23 @@ export function buildNotificationEmail(
   const serviceTitle = SERVICES[request.service]?.title ?? request.service;
 
   const body = [
-    "New service request received.",
+    "Nouvelle demande de service reçue.",
     "",
-    `Request ID: ${request.id}`,
-    `Created at: ${request.createdAt}`,
-    `Service:    ${serviceTitle}`,
+    `Référence de la demande : ${request.id}`,
+    `Reçue le : ${request.createdAt}`,
+    `Service : ${serviceTitle}`,
     "",
-    `Name:  ${request.name}`,
-    `Phone: ${request.phone}`,
-    `Email: ${request.email ?? "(not provided)"}`,
+    `Nom : ${request.name}`,
+    `Téléphone : ${request.phone}`,
+    `Email : ${request.email ?? "(non renseigné)"}`,
     "",
-    "Description:",
-    request.description.length > 0 ? request.description : "(none)",
+    "Description :",
+    request.description.length > 0 ? request.description : "(aucune)",
   ].join("\n");
 
   return {
     to: businessTo,
-    subject: `New service request: ${serviceTitle}`,
+    subject: `Aide à la personne — Nouvelle demande de service : ${serviceTitle}`,
     body,
   };
 }

@@ -38,10 +38,12 @@ const BUSINESS_TO = "business@example.com";
 const SAMPLE_SERVICE_TITLE = SERVICES[sampleRequest.service].title;
 
 describe("buildNotificationEmail", () => {
-  it("addresses the business and names the service in the subject", () => {
+  it("addresses the business and names the service in the French subject with the business name", () => {
     const email = buildNotificationEmail(sampleRequest, BUSINESS_TO);
     expect(email.to).toBe(BUSINESS_TO);
-    expect(email.subject).toBe(`New service request: ${SAMPLE_SERVICE_TITLE}`);
+    expect(email.subject).toBe(
+      `Aide à la personne — Nouvelle demande de service : ${SAMPLE_SERVICE_TITLE}`,
+    );
   });
 
   it("includes every request detail in the body", () => {
@@ -60,8 +62,8 @@ describe("buildNotificationEmail", () => {
       { ...sampleRequest, email: null, description: "" },
       BUSINESS_TO,
     );
-    expect(email.body).toContain("(not provided)");
-    expect(email.body).toContain("(none)");
+    expect(email.body).toContain("(non renseigné)");
+    expect(email.body).toContain("(aucune)");
   });
 });
 
